@@ -13,6 +13,7 @@ const (
 	EnvironmentVariableName       = "ENVIRONMENT"
 	LogLevelVariableName          = "LOG_LEVEL"
 	HTTPListenAddressVariableName = "HTTP_LISTEN_ADDRESS"
+	ViewsPathVariableName         = "VIEWS_PATH"
 	CORSAllowOriginsVariableName  = "CORS_ALLOW_ORIGINS"
 	BodyLimitVariableName         = "BODY_LIMIT"
 	OTELExporterEndpointVarName   = "OTEL_EXPORTER_ENDPOINT"
@@ -25,6 +26,7 @@ const (
 	DefaultEnvironment       = "development"
 	DefaultLogLevel          = "debug"
 	DefaultHTTPListenAddress = ":8080"
+	DefaultViewsPath         = "./views"
 	DefaultBodyLimit         = 4 * 1024 * 1024
 	DefaultSessionDuration   = "24h"
 )
@@ -34,6 +36,7 @@ type Config struct {
 	Environment          string
 	LogLevel             string
 	HTTPListenAddress    string
+	ViewsPath            string
 	CORSAllowOrigins     string
 	BodyLimit            int
 	OTELExporterEndpoint string
@@ -48,6 +51,7 @@ func Load() (*Config, error) {
 		Environment:          strings.ToLower(strings.TrimSpace(getenvOrDefault(EnvironmentVariableName, DefaultEnvironment))),
 		LogLevel:             strings.ToLower(strings.TrimSpace(getenvOrDefault(LogLevelVariableName, DefaultLogLevel))),
 		HTTPListenAddress:    strings.TrimSpace(getenvOrDefault(HTTPListenAddressVariableName, DefaultHTTPListenAddress)),
+		ViewsPath:            strings.TrimSpace(getenvOrDefault(ViewsPathVariableName, DefaultViewsPath)),
 		CORSAllowOrigins:     strings.TrimSpace(os.Getenv(CORSAllowOriginsVariableName)),
 		BodyLimit:            DefaultBodyLimit,
 		OTELExporterEndpoint: strings.TrimSpace(os.Getenv(OTELExporterEndpointVarName)),
@@ -110,6 +114,9 @@ func (loadedConfig *Config) validate() error {
 
 	if loadedConfig.HTTPListenAddress == "" {
 		return fmt.Errorf("config: %s cannot be empty", HTTPListenAddressVariableName)
+	}
+	if loadedConfig.ViewsPath == "" {
+		return fmt.Errorf("config: %s cannot be empty", ViewsPathVariableName)
 	}
 	if loadedConfig.BodyLimit <= 0 {
 		return fmt.Errorf("config: %s must be greater than 0", BodyLimitVariableName)
