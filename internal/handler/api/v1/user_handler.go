@@ -41,10 +41,11 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 	}
 
 	user := &domain.User{
-		Username: request.Username,
-		FullName: request.FullName,
-		Phone:    request.Phone,
-		Status:   domain.UserStatusActive,
+		Username:     request.Username,
+		PasswordHash: request.Password,
+		FullName:     request.FullName,
+		Phone:        request.Phone,
+		Status:       domain.UserStatusActive,
 	}
 	if createError := handler.userService.Create(ctx.Context(), user); createError != nil {
 		return createError

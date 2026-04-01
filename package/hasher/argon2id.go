@@ -18,6 +18,20 @@ const (
 	argon2IDSaltLength            = 16
 )
 
+type Argon2ID struct{}
+
+func NewArgon2ID() *Argon2ID {
+	return &Argon2ID{}
+}
+
+func (hasher *Argon2ID) Hash(password string) (string, error) {
+	return Hash(password)
+}
+
+func (hasher *Argon2ID) Verify(password string, encodedHash string) (bool, error) {
+	return Verify(password, encodedHash)
+}
+
 // Hash hashes a password with Argon2id and returns a PHC-formatted string.
 func Hash(password string) (string, error) {
 	passwordBytes := []byte(password)

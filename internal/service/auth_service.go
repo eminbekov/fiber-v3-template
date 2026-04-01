@@ -104,3 +104,7 @@ func (service *AuthService) Session(ctx context.Context, sessionToken string) (*
 
 	return metadata, nil
 }
+
+func (service *AuthService) SessionDuration() time.Duration {
+	return service.sessionDuration
+}

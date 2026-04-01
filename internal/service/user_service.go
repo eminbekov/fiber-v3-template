@@ -23,12 +23,14 @@ const (
 type UserService struct {
 	userRepository repository.UserRepository
 	cache          cache.Cache
+	passwordHasher PasswordHasher
 }
 
-func NewUserService(userRepository repository.UserRepository, cache cache.Cache) *UserService {
+func NewUserService(userRepository repository.UserRepository, cache cache.Cache, passwordHasher PasswordHasher) *UserService {
 	return &UserService{
 		userRepository: userRepository,
 		cache:          cache,
+		passwordHasher: passwordHasher,
 	}
 }
 
@@ -108,11 +110,18 @@ func (service *UserService) Create(ctx context.Context, user *domain.User) error
 	}
 
 	user.Username = strings.TrimSpace(user.Username)
+	user.PasswordHash = strings.TrimSpace(user.PasswordHash)
 	user.FullName = strings.TrimSpace(user.FullName)
 	user.Phone = strings.TrimSpace(user.Phone)
-	if user.Username == "" || user.FullName == "" || user.Phone == "" {
+	if user.Username == "" || user.FullName == "" || user.Phone == "" || user.PasswordHash == "" {
 		return domain.ErrValidation
 	}
+
+	hashedPassword, hashError := service.passwordHasher.Hash(user.PasswordHash)
+	if hashError != nil {
+		return fmt.Errorf("UserService.Create hash password: %w", hashError)
+	}
+	user.PasswordHash = hashedPassword
 
 	existingUser, findByUsernameError := service.userRepository.FindByUsername(ctx, user.Username)
 	if findByUsernameError == nil && existingUser != nil {
@@ -146,6 +155,10 @@ func (service *UserService) Update(ctx context.Context, user *domain.User) error
 	}
 
 	currentUser, findByIDError := service.userRepository.FindByID(ctx, user.ID)
+	if user.PasswordHash == "" {
+		user.PasswordHash = currentUser.PasswordHash
+	}
+
 	if findByIDError != nil {
 		return fmt.Errorf("UserService.Update find by id: %w", findByIDError)
 	}
