@@ -31,6 +31,14 @@ migrate-down: ## Roll back migration steps (default 1)
 migrate-create: ## Create a new migration (usage: make migrate-create NAME=create_orders)
 	migrate create -ext sql -dir migrations -seq $(NAME)
 
+.PHONY: swagger
+swagger: ## Generate Swagger docs from handler annotations
+	swag init -g cmd/server/main.go -o docs --parseInternal --parseDependency
+
+.PHONY: swagger-fmt
+swagger-fmt: ## Format Swagger annotations
+	swag fmt
+
 .PHONY: help
 help: ## Show available make targets
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z_-]+:.*## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
