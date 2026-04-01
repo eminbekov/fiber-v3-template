@@ -113,9 +113,9 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 11 — Storage, CDN, multi-instance concerns
 
-- File storage abstraction (S3/MinIO/local) (guide §2 `internal/storage`, §11.1).
-- Signed URLs for uploads/downloads where required (guide §11.1, §15.1).
-- WebSocket or broadcast notes if horizontal scale (guide §15.4).
+- [x] File storage abstraction (S3/MinIO/local) (guide §2 `internal/storage`, §11.1).
+- [x] Signed URLs for uploads/downloads where required (guide §11.1, §15.1).
+- [x] WebSocket or broadcast notes if horizontal scale (guide §15.4).
 
 ---
 
