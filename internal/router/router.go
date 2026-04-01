@@ -14,6 +14,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
+	"github.com/eminbekov/fiber-v3-template/internal/storage"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/swagger"
@@ -30,6 +31,7 @@ type Dependencies struct {
 	DashboardHandler     *admin.DashboardHandler
 	Translator           *i18n.Translator
 	Cache                cache.Cache
+	FileStorage          storage.FileStorage
 	HealthCheckers       []health.Checker
 }
 
