@@ -19,10 +19,13 @@ COPY --from=builder /app/cron ./cron
 COPY --from=builder /app/migrate ./migrate
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/views ./views
+COPY deploy/docker/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:8080/health/live || exit 1
 
 EXPOSE 8080
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["./server"]
