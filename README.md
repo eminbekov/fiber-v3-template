@@ -61,6 +61,7 @@ Copy [`.env.example`](.env.example) to `.env` for local development and adjust v
 | `S3_REGION` | When `STORAGE_TYPE=s3` | (none) | Region (for example `us-east-1`). |
 | `CDN_BASE_URL` | No | (empty) | Optional public URL prefix for CDN or reverse-proxy (no trailing slash). |
 | `FILE_SIGNING_KEY` | Yes | (none) | Secret for HMAC-signed file URLs (use a long random value in production). |
+| `SIGNED_URL_TTL` | No | `15m` | How long presigned / HMAC download links remain valid (Go duration). |
 
 ## Run
 
@@ -138,6 +139,8 @@ go run ./cmd/migrate force 1
 - `GET /health/live`, `GET /health/ready` — liveness and readiness probes
 - `GET /metrics` — Prometheus metrics endpoint
 - `GET /api/v1/ping` — versioned API scaffold endpoint
+- `POST /api/v1/files` — multipart upload (authenticated; requires `files:create` for manager role after migration `000005`)
+- `GET /api/files/:filename` — download when `token` and `expires` HMAC query parameters are valid
 
 ## Observability
 

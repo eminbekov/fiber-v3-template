@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -11,6 +12,8 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	awss3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 // S3FileStorageOptions configures S3-compatible storage (AWS S3, MinIO, etc.).
@@ -77,6 +80,25 @@ func (backend *s3FileStorage) Upload(ctx context.Context, key string, reader io.
 		return fmt.Errorf("s3FileStorage.Upload: %w", err)
 	}
 	return nil
+}
+
+func (backend *s3FileStorage) Open(ctx context.Context, key string) (io.ReadCloser, string, error) {
+	output, err := backend.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(backend.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		var notFound *awss3types.NoSuchKey
+		if errors.As(err, &notFound) {
+			return nil, "", fmt.Errorf("s3FileStorage.Open: %w", domain.ErrNotFound)
+		}
+		return nil, "", fmt.Errorf("s3FileStorage.Open: %w", err)
+	}
+	contentType := "application/octet-stream"
+	if output.ContentType != nil && strings.TrimSpace(*output.ContentType) != "" {
+		contentType = *output.ContentType
+	}
+	return output.Body, contentType, nil
 }
 
 func (backend *s3FileStorage) URL(key string) string {

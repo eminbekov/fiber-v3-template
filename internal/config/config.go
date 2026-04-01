@@ -31,6 +31,7 @@ const (
 	S3RegionVariableName          = "S3_REGION"
 	CDNBaseURLVariableName        = "CDN_BASE_URL"
 	FileSigningKeyVariableName    = "FILE_SIGNING_KEY"
+	SignedURLTTLVariableName      = "SIGNED_URL_TTL"
 )
 
 const (
@@ -44,6 +45,7 @@ const (
 	DefaultSessionDuration   = "24h"
 	DefaultStorageType       = "local"
 	DefaultStorageLocalPath  = "./uploads"
+	DefaultSignedURLTTL      = "15m"
 )
 
 // Config holds application settings loaded from the environment.
@@ -69,6 +71,7 @@ type Config struct {
 	S3Region             string
 	CDNBaseURL           string
 	FileSigningKey       string
+	SignedURLTTL         time.Duration
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -108,6 +111,16 @@ func Load() (*Config, error) {
 	if validationError := loadedConfig.validate(); validationError != nil {
 		return nil, validationError
 	}
+
+	signedURLTTLString := strings.TrimSpace(getenvOrDefault(SignedURLTTLVariableName, DefaultSignedURLTTL))
+	parsedSignedURLTTL, signedTTLError := time.ParseDuration(signedURLTTLString)
+	if signedTTLError != nil {
+		return nil, fmt.Errorf("config: invalid %s: %w", SignedURLTTLVariableName, signedTTLError)
+	}
+	if parsedSignedURLTTL <= 0 {
+		return nil, fmt.Errorf("config: %s must be greater than 0", SignedURLTTLVariableName)
+	}
+	loadedConfig.SignedURLTTL = parsedSignedURLTTL
 
 	return loadedConfig, nil
 }

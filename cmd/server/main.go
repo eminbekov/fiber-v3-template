@@ -110,6 +110,7 @@ func run(parentContext context.Context) error {
 	applicationCache := cache.NewRedisCache(redisClient)
 	passwordHasher := hasher.NewArgon2ID()
 	sessionStore := session.NewRedisStore(redisClient, applicationConfiguration.SessionDuration)
+	fileService := service.NewFileService(fileStorage, applicationConfiguration.SignedURLTTL)
 	userService := service.NewUserService(userRepository, roleRepository, applicationCache, passwordHasher)
 	authService := service.NewAuthService(
 		userRepository,
@@ -143,7 +144,7 @@ func run(parentContext context.Context) error {
 		DashboardHandler:     dashboardHandler,
 		Translator:           translator,
 		Cache:                applicationCache,
-		FileStorage:          fileStorage,
+		FileService:          fileService,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {

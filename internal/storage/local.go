@@ -2,16 +2,15 @@ package storage
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 // LocalFileStorageOptions configures filesystem-backed storage (development or single-node).
@@ -100,6 +99,31 @@ func (backend *localFileStorage) Upload(ctx context.Context, key string, reader 
 	return nil
 }
 
+func (backend *localFileStorage) Open(ctx context.Context, key string) (io.ReadCloser, string, error) {
+	fullPath, resolveError := backend.resolvePath(key)
+	if resolveError != nil {
+		return nil, "", fmt.Errorf("localFileStorage.Open: %w", resolveError)
+	}
+	file, openError := os.Open(fullPath)
+	if openError != nil {
+		if os.IsNotExist(openError) {
+			return nil, "", fmt.Errorf("localFileStorage.Open: %w", domain.ErrNotFound)
+		}
+		return nil, "", fmt.Errorf("localFileStorage.Open: %w", openError)
+	}
+	contentType := mime.TypeByExtension(filepath.Ext(fullPath))
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	select {
+	case <-ctx.Done():
+		_ = file.Close()
+		return nil, "", ctx.Err()
+	default:
+	}
+	return file, contentType, nil
+}
+
 func (backend *localFileStorage) URL(key string) string {
 	path := fmt.Sprintf("%s/%s", backend.servePrefix, strings.TrimLeft(key, "/"))
 	if backend.publicURLPrefix != "" {
@@ -114,21 +138,7 @@ func (backend *localFileStorage) SignedURL(ctx context.Context, key string, expi
 		return "", ctx.Err()
 	default:
 	}
-	expiresUnix := time.Now().Add(expiry).Unix()
-	trimmedKey := strings.TrimLeft(key, "/")
-	token := signFilenameToken(trimmedKey, expiresUnix, backend.signingKey)
-	path := fmt.Sprintf("%s/%s?token=%s&expires=%d", backend.servePrefix, trimmedKey, token, expiresUnix)
-	if backend.publicURLPrefix != "" {
-		return backend.publicURLPrefix + path, nil
-	}
-	return path, nil
-}
-
-func signFilenameToken(filename string, expiresUnix int64, signingKey []byte) string {
-	message := filename + strconv.FormatInt(expiresUnix, 10)
-	mac := hmac.New(sha256.New, signingKey)
-	mac.Write([]byte(message))
-	return hex.EncodeToString(mac.Sum(nil))
+	return PublicSignedFileURL(backend.publicURLPrefix, backend.servePrefix, key, backend.signingKey, expiry)
 }
 
 func (backend *localFileStorage) Delete(ctx context.Context, key string) error {

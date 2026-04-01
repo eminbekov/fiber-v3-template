@@ -99,6 +99,44 @@ info:
   title: Fiber v3 Template API
   version: 1.0.0
 paths:
+  /files/{filename}:
+    get:
+      description: Returns file bytes when token and expires are valid.
+      parameters:
+      - description: Object key / filename
+        in: path
+        name: filename
+        required: true
+        type: string
+      - description: HMAC token
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: Unix expiry
+        format: int64
+        in: query
+        name: expires
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Binary content
+          schema:
+            type: file
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+      summary: Download file
+      tags:
+      - Files
   /v1/auth/login:
     post:
       consumes:
@@ -159,6 +197,50 @@ paths:
       summary: Logout
       tags:
       - Auth
+  /v1/files:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts multipart form field "file" and returns object key and
+        URLs.
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Optional note
+        in: formData
+        name: note
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload file
+      tags:
+      - Files
   /v1/ping:
     get:
       consumes:
