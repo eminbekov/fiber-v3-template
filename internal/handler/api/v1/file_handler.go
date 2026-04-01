@@ -47,12 +47,15 @@ func (handler *FileHandler) Upload(ctx fiber.Ctx) error {
 	metadata.Note = ctx.FormValue("note")
 	fieldErrors := requestDTO.ValidateDTO(&metadata)
 	if len(fieldErrors) > 0 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("fileHandler.Upload: %w", jsonError)
+		}
+		return nil
 	}
 
 	fileHeader, formError := ctx.FormFile("file")
@@ -82,9 +85,12 @@ func (handler *FileHandler) Upload(ctx fiber.Ctx) error {
 		contentType = "application/octet-stream"
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(response.Response{
+	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response{
 		Data: responseV1.NewFileResponse(objectKey, signedURL, publicURL, contentType),
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("fileHandler.Upload: %w", jsonError)
+	}
+	return nil
 }
 
 // Download streams a stored object after signed URL validation middleware.

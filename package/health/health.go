@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -33,27 +34,36 @@ func NewHandler(checkers ...Checker) *Handler {
 
 // Liveness returns process liveness.
 func (healthHandler *Handler) Liveness(ctx fiber.Ctx) error {
-	return ctx.JSON(Response{
+	if jsonError := ctx.JSON(Response{
 		Status: "ok",
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("healthHandler.Liveness: %w", jsonError)
+	}
+	return nil
 }
 
 // Readiness returns dependency readiness.
 func (healthHandler *Handler) Readiness(ctx fiber.Ctx) error {
 	for _, checker := range healthHandler.checkers {
 		if checkerError := checker.Check(ctx.Context()); checkerError != nil {
-			return ctx.Status(fiber.StatusServiceUnavailable).JSON(Response{
+			if jsonError := ctx.Status(fiber.StatusServiceUnavailable).JSON(Response{
 				Status: "unhealthy",
 				Details: map[string]string{
 					checker.Name(): checkerError.Error(),
 				},
-			})
+			}); jsonError != nil {
+				return fmt.Errorf("healthHandler.Readiness: %w", jsonError)
+			}
+			return nil
 		}
 	}
 
-	return ctx.JSON(Response{
+	if jsonError := ctx.JSON(Response{
 		Status: "ok",
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("healthHandler.Readiness: %w", jsonError)
+	}
+	return nil
 }
 
 // StaticErrorChecker keeps readiness extensible for future phases.

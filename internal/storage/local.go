@@ -151,7 +151,7 @@ func (backend *localFileStorage) Delete(ctx context.Context, key string) error {
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("localFileStorage.Delete: %w", ctx.Err())
 	default:
 	}
 	return nil
