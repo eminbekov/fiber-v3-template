@@ -14,6 +14,7 @@ import (
 	userv1 "github.com/eminbekov/fiber-v3-template/gen/proto/user/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
+	"github.com/eminbekov/fiber-v3-template/internal/cron"
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	internalgrpc "github.com/eminbekov/fiber-v3-template/internal/grpc"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
@@ -121,6 +122,17 @@ func run(parentContext context.Context) error {
 		applicationConfiguration.SessionDuration,
 	)
 	authorizationService := service.NewAuthorizationService(permissionRepository, applicationCache)
+	scheduler := cron.NewScheduler()
+	scheduler.Register(cron.Job{
+		Name:     "redis-connectivity-check",
+		Schedule: 5 * time.Minute,
+		Run: func(ctx context.Context) error {
+			jobContext, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			return redisClient.Ping(jobContext).Err()
+		},
+	})
+
 	translator, translatorError := i18n.NewTranslator("en")
 	if translatorError != nil {
 		return fmt.Errorf("translator: %w", translatorError)
@@ -163,6 +175,12 @@ func run(parentContext context.Context) error {
 	})
 
 	group, groupContext := errgroup.WithContext(parentContext)
+
+	group.Go(func() error {
+		scheduler.Start(groupContext)
+		<-groupContext.Done()
+		return nil
+	})
 
 	group.Go(func() error {
 		slog.Info("http server starting", "address", applicationConfiguration.HTTPListenAddress)
