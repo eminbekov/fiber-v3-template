@@ -11,6 +11,7 @@ var dtoValidator = validator.New()
 
 type CreateUserRequest struct {
 	Username string `json:"username" validate:"required,min=3,max=50,alphanum"`
+	Password string `json:"password" validate:"required,min=8"`
 	FullName string `json:"full_name" validate:"required,max=100"`
 	Phone    string `json:"phone" validate:"required,e164"`
 }
@@ -29,6 +30,7 @@ type ListUsersRequest struct {
 
 func (request *CreateUserRequest) Normalize() {
 	request.Username = strings.TrimSpace(request.Username)
+	request.Password = strings.TrimSpace(request.Password)
 	request.FullName = strings.TrimSpace(request.FullName)
 	request.Phone = strings.TrimSpace(request.Phone)
 }
