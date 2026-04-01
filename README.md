@@ -14,9 +14,11 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 ├── cmd/migrate/         # Database migration CLI entrypoint
 ├── internal/
 │   ├── config/          # Typed configuration from environment variables
+│   ├── cache/           # Redis client, cache interface, key builders, cache implementation
 │   ├── database/        # PostgreSQL pool setup and pool registry
 │   ├── domain/          # Sentinel business errors and core domain types
 │   ├── repository/      # Repository interfaces and PostgreSQL implementations
+│   ├── session/         # Optional Redis-backed session store (removable)
 │   ├── dto/response/    # Standard API success/error envelopes
 │   ├── handler/         # Centralized error handler + API v1 handlers
 │   ├── middleware/      # Recovery, metrics, request ID, logging, CORS, Helmet, body limit
@@ -45,6 +47,7 @@ Copy [`.env.example`](.env.example) to `.env` for local development and adjust v
 | `BODY_LIMIT` | No | `4194304` | Maximum request body size in bytes (4 MB default). |
 | `OTEL_EXPORTER_ENDPOINT` | No | (empty) | OpenTelemetry collector endpoint (`host:port`). Empty disables telemetry export. |
 | `DATABASE_URL` | Yes | (none) | PostgreSQL connection URL used by the server and migration CLI. |
+| `REDIS_URL` | Yes | (none) | Redis connection URL used for cache and optional session storage. |
 
 ## Run
 
@@ -61,6 +64,7 @@ HTTP_LISTEN_ADDRESS=:3000 \
 CORS_ALLOW_ORIGINS=https://example.com,https://admin.example.com \
 BODY_LIMIT=4194304 \
 OTEL_EXPORTER_ENDPOINT=localhost:4317 \
+REDIS_URL=redis://localhost:6379/0 \
 go run ./cmd/server
 ```
 
@@ -75,6 +79,14 @@ export DATABASE_URL="postgres://postgres:postgres@localhost:5432/fiber_template?
 ```
 
 The HTTP server validates `DATABASE_URL` on startup and fails fast if it is missing or invalid.
+
+## Cache and sessions
+
+- `internal/cache/cache.go` defines the cache contract used by services.
+- `internal/cache/redis.go` provides the Redis implementation with `Get`, `Set`, `Delete`, and prefix invalidation.
+- `internal/cache/keys.go` centralizes typed cache key builders to avoid string typos.
+- `internal/service/user_service.go` now uses cache-aside reads and invalidates stale keys after writes.
+- `internal/session/` provides an optional, isolated Redis session store package that can be wired later (for example in HTML admin flows) or removed entirely when not needed.
 
 ## Migrations
 
