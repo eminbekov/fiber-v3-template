@@ -4,15 +4,15 @@ Human-readable rules for **fiber-v3-template**. Automated checks may enforce sub
 
 ## Project rules (hard limits)
 
-| Rule | Limit | Rationale |
-|------|--------|-----------|
-| Max function length | ~60 lines (linter often ~80) | Easier to test and reason about |
-| Max nesting depth | 4 levels | Use guard clauses to stay flat |
-| Error returns | No ignoring with `_` | Every error must be handled or logged |
-| Global mutable state | Not allowed | Use constructors and explicit wiring |
-| Empty interface | Prefer `any`; justify if needed | Clear, modern Go |
-| HTTP responses | Typed structs | Avoid `fiber.Map` for fixed shapes |
-| Dynamic maps | Only when keys are unknown at compile time | Otherwise use structs |
+| Rule                 | Limit                                      | Rationale                             |
+|----------------------|--------------------------------------------|---------------------------------------|
+| Max function length  | ~60 lines (linter often ~80)               | Easier to test and reason about       |
+| Max nesting depth    | 4 levels                                   | Use guard clauses to stay flat        |
+| Error returns        | No ignoring with `_`                       | Every error must be handled or logged |
+| Global mutable state | Not allowed                                | Use constructors and explicit wiring  |
+| Empty interface      | Prefer `any`; justify if needed            | Clear, modern Go                      |
+| HTTP responses       | Typed structs                              | Avoid `fiber.Map` for fixed shapes    |
+| Dynamic maps         | Only when keys are unknown at compile time | Otherwise use structs                 |
 
 ## Imports
 
@@ -31,7 +31,7 @@ Separate groups with a blank line.
 
 ## Functions
 
-- `context.Context` is the first parameter when the work can be cancelled or timed out.
+- `context.Context` is the first parameter when the work can be canceled or timed out.
 - Value receivers when the method only reads; pointer receivers when it mutates. If any method uses a pointer receiver, prefer pointer receivers for all methods on that type.
 
 ## Documentation
