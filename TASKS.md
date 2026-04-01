@@ -128,10 +128,10 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 13 — Docker, deploy, CI/CD
 
-- Multi-stage `Dockerfile` and `.dockerignore` (guide §20.1).
-- `docker-compose` for app + Postgres + Redis + NATS as needed (guide §20.2).
-- GitHub Actions (or chosen CI): test, lint, `swagger` gen, build image (guide §21).
-- Image tagging and manual deploy gates for production (guide §21.2–§21.3).
+- [x] Multi-stage `Dockerfile` and `.dockerignore` (guide §20.1).
+- [x] `docker-compose` for app + Postgres + Redis + NATS as needed (guide §20.2).
+- [x] GitHub Actions (or chosen CI): test, lint, `swagger` gen, build image (guide §21).
+- [x] Image tagging and manual deploy gates for production (guide §21.2–§21.3).
 
 ---
 

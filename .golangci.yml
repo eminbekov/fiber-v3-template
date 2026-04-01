@@ -15,22 +15,17 @@ linters:
     - nestif
     - funlen
     - gocognit
+    - prealloc
     - errorlint
+    - wrapcheck
+    - noctx
     - gosec
     - bodyclose
 
   settings:
     funlen:
-      lines: 90
-      statements: 50
+      lines: 80
     cyclop:
-      max-complexity: 30
+      max-complexity: 15
     nestif:
       min-complexity: 5
-    gocognit:
-      min-complexity: 35
-    gosec:
-      excludes:
-        - G101
-        - G115
-        - G304

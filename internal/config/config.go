@@ -27,7 +27,7 @@ const (
 	S3EndpointVariableName        = "S3_ENDPOINT"
 	S3BucketVariableName          = "S3_BUCKET"
 	S3AccessKeyVariableName       = "S3_ACCESS_KEY"
-	S3SecretKeyVariableName       = "S3_SECRET_KEY"
+	S3SecretKeyVariableName       = "S3_SECRET_KEY" //nolint:gosec // env var name, not a credential
 	S3RegionVariableName          = "S3_REGION"
 	CDNBaseURLVariableName        = "CDN_BASE_URL"
 	FileSigningKeyVariableName    = "FILE_SIGNING_KEY"
@@ -142,80 +142,78 @@ func (loadedConfig *Config) validate() error {
 	}
 	loadedConfig.SessionDuration = parsedSessionDuration
 
-	switch loadedConfig.Environment {
-	case "development", "production":
-	default:
-		return fmt.Errorf(
-			"config: invalid %s %q (allowed: development, production)",
-			EnvironmentVariableName,
-			loadedConfig.Environment,
-		)
+	if enumError := validateEnum(loadedConfig.Environment, EnvironmentVariableName, []string{"development", "production"}); enumError != nil {
+		return enumError
 	}
-
-	switch loadedConfig.LogLevel {
-	case "debug", "info", "warn", "error":
-	default:
-		return fmt.Errorf(
-			"config: invalid %s %q (allowed: debug, info, warn, error)",
-			LogLevelVariableName,
-			loadedConfig.LogLevel,
-		)
+	if enumError := validateEnum(loadedConfig.LogLevel, LogLevelVariableName, []string{"debug", "info", "warn", "error"}); enumError != nil {
+		return enumError
 	}
-
-	if loadedConfig.HTTPListenAddress == "" {
-		return fmt.Errorf("config: %s cannot be empty", HTTPListenAddressVariableName)
+	if fieldError := firstError(
+		validateRequiredField(loadedConfig.HTTPListenAddress, HTTPListenAddressVariableName),
+		validateRequiredField(loadedConfig.GRPCListenAddress, GRPCListenAddressVariableName),
+		validateRequiredField(loadedConfig.ViewsPath, ViewsPathVariableName),
+		validatePositiveInteger(loadedConfig.BodyLimit, BodyLimitVariableName),
+		validateRequiredField(loadedConfig.DatabaseURL, DatabaseURLVariableName),
+		validateRequiredField(loadedConfig.RedisURL, RedisURLVariableName),
+		validateRequiredField(loadedConfig.NATSURL, NATSURLVariableName),
+	); fieldError != nil {
+		return fieldError
 	}
-	if loadedConfig.GRPCListenAddress == "" {
-		return fmt.Errorf("config: %s cannot be empty", GRPCListenAddressVariableName)
+	if enumError := validateEnum(loadedConfig.StorageType, StorageTypeVariableName, []string{"s3", "local"}); enumError != nil {
+		return enumError
 	}
-	if loadedConfig.ViewsPath == "" {
-		return fmt.Errorf("config: %s cannot be empty", ViewsPathVariableName)
+	if fieldError := validateRequiredField(loadedConfig.FileSigningKey, FileSigningKeyVariableName); fieldError != nil {
+		return fieldError
 	}
-	if loadedConfig.BodyLimit <= 0 {
-		return fmt.Errorf("config: %s must be greater than 0", BodyLimitVariableName)
-	}
-	if loadedConfig.DatabaseURL == "" {
-		return fmt.Errorf("config: %s cannot be empty", DatabaseURLVariableName)
-	}
-	if loadedConfig.RedisURL == "" {
-		return fmt.Errorf("config: %s cannot be empty", RedisURLVariableName)
-	}
-	if loadedConfig.NATSURL == "" {
-		return fmt.Errorf("config: %s cannot be empty", NATSURLVariableName)
-	}
-
-	switch loadedConfig.StorageType {
-	case "s3", "local":
-	default:
-		return fmt.Errorf(
-			"config: invalid %s %q (allowed: s3, local)",
-			StorageTypeVariableName,
-			loadedConfig.StorageType,
-		)
-	}
-
-	if loadedConfig.FileSigningKey == "" {
-		return fmt.Errorf("config: %s cannot be empty", FileSigningKeyVariableName)
-	}
-
 	if loadedConfig.StorageType == "s3" {
-		if loadedConfig.S3Bucket == "" {
-			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3BucketVariableName, StorageTypeVariableName)
-		}
-		if loadedConfig.S3AccessKey == "" {
-			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3AccessKeyVariableName, StorageTypeVariableName)
-		}
-		if loadedConfig.S3SecretKey == "" {
-			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3SecretKeyVariableName, StorageTypeVariableName)
-		}
-		if loadedConfig.S3Region == "" {
-			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3RegionVariableName, StorageTypeVariableName)
+		if s3Error := loadedConfig.validateS3Config(); s3Error != nil {
+			return s3Error
 		}
 	}
-
 	if loadedConfig.StorageType == "local" && loadedConfig.StorageLocalBasePath == "" {
 		return fmt.Errorf("config: %s cannot be empty when %s=local", StorageLocalBasePathVarName, StorageTypeVariableName)
 	}
 
+	return nil
+}
+
+func (loadedConfig *Config) validateS3Config() error {
+	return firstError(
+		validateRequiredField(loadedConfig.S3Bucket, S3BucketVariableName),
+		validateRequiredField(loadedConfig.S3AccessKey, S3AccessKeyVariableName),
+		validateRequiredField(loadedConfig.S3SecretKey, S3SecretKeyVariableName),
+		validateRequiredField(loadedConfig.S3Region, S3RegionVariableName),
+	)
+}
+
+func validateRequiredField(value string, fieldName string) error {
+	if value == "" {
+		return fmt.Errorf("config: %s cannot be empty", fieldName)
+	}
+	return nil
+}
+
+func validatePositiveInteger(value int, fieldName string) error {
+	if value <= 0 {
+		return fmt.Errorf("config: %s must be greater than 0", fieldName)
+	}
+	return nil
+}
+
+func validateEnum(value string, fieldName string, allowed []string) error {
+	for _, allowedValue := range allowed {
+		if value == allowedValue {
+			return nil
+		}
+	}
+	return fmt.Errorf("config: invalid %s %q (allowed: %s)", fieldName, value, strings.Join(allowed, ", "))
+}
+
+func firstError(errors ...error) error {
+	for _, err := range errors {
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

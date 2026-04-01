@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -23,6 +24,9 @@ func NewRequestLogger() fiber.Handler {
 			"request_id", ctx.Get("X-Request-ID"),
 		)
 
-		return nextError
+		if nextError != nil {
+			return fmt.Errorf("requestLogger: %w", nextError)
+		}
+		return nil
 	}
 }

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
@@ -68,7 +68,7 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 		Status:       domain.UserStatusActive,
 	}
 	if createError := handler.userService.Create(ctx.Context(), user); createError != nil {
-		return createError
+		return fmt.Errorf("userHandler.Create: %w", createError)
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(response.Response{
@@ -106,12 +106,15 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 
 	user, findByIDError := handler.userService.FindByID(ctx.Context(), id)
 	if findByIDError != nil {
-		return findByIDError
+		return fmt.Errorf("userHandler.FindByID: %w", findByIDError)
 	}
 
-	return ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response{
 		Data: responseV1.NewUserResponse(*user),
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("userHandler.FindByID: %w", jsonError)
+	}
+	return nil
 }
 
 // List returns a paginated list of users.
@@ -162,12 +165,15 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 
 	users, totalCount, listError := handler.userService.List(ctx.Context(), request.Page, request.PageSize)
 	if listError != nil {
-		return listError
+		return fmt.Errorf("userHandler.List: %w", listError)
 	}
 
-	return ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response{
 		Data: responseV1.NewUserListResponse(users, totalCount, request.Page, request.PageSize),
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("userHandler.List: %w", jsonError)
+	}
+	return nil
 }
 
 // Update updates an existing user by ID.
@@ -228,17 +234,20 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 		return domain.ErrUnauthorized
 	}
 	if updateError := handler.userService.Update(ctx.Context(), requesterID, user); updateError != nil {
-		return updateError
+		return fmt.Errorf("userHandler.Update: %w", updateError)
 	}
 
 	updatedUser, findByIDError := handler.userService.FindByID(ctx.Context(), id)
 	if findByIDError != nil {
-		return findByIDError
+		return fmt.Errorf("userHandler.Update: %w", findByIDError)
 	}
 
-	return ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response{
 		Data: responseV1.NewUserResponse(*updatedUser),
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("userHandler.Update: %w", jsonError)
+	}
+	return nil
 }
 
 // Delete soft-deletes a user by ID.
@@ -269,15 +278,14 @@ func (handler *UserHandler) Delete(ctx fiber.Ctx) error {
 		})
 	}
 
-	softDeleteError := handler.userService.SoftDelete(ctx.Context(), id)
-	if softDeleteError != nil {
-		if errors.Is(softDeleteError, domain.ErrNotFound) {
-			return softDeleteError
-		}
-		return softDeleteError
+	if softDeleteError := handler.userService.SoftDelete(ctx.Context(), id); softDeleteError != nil {
+		return fmt.Errorf("userHandler.Delete: %w", softDeleteError)
 	}
 
-	return ctx.SendStatus(fiber.StatusNoContent)
+	if sendError := ctx.SendStatus(fiber.StatusNoContent); sendError != nil {
+		return fmt.Errorf("userHandler.Delete: %w", sendError)
+	}
+	return nil
 }
 
 func extractLanguage(ctx fiber.Ctx) string {

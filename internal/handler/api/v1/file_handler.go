@@ -69,12 +69,12 @@ func (handler *FileHandler) Upload(ctx fiber.Ctx) error {
 	contentType := fileHeader.Header.Get("Content-Type")
 	objectKey, uploadError := handler.fileService.Upload(ctx.Context(), uploadedFile, fileHeader.Filename, contentType)
 	if uploadError != nil {
-		return uploadError
+		return fmt.Errorf("fileHandler.Upload: %w", uploadError)
 	}
 
 	signedURL, signedError := handler.fileService.SignedDownloadURL(ctx.Context(), objectKey)
 	if signedError != nil {
-		return signedError
+		return fmt.Errorf("fileHandler.Upload: %w", signedError)
 	}
 
 	publicURL := handler.fileService.PublicURL(objectKey)
@@ -104,7 +104,7 @@ func (handler *FileHandler) Download(ctx fiber.Ctx) error {
 	filename := ctx.Params("filename")
 	reader, contentType, openError := handler.fileService.Open(ctx.Context(), filename)
 	if openError != nil {
-		return openError
+		return fmt.Errorf("fileHandler.Download: %w", openError)
 	}
 	defer func() { _ = reader.Close() }()
 

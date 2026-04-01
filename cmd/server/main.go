@@ -31,6 +31,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
+	"github.com/gofiber/fiber/v3"
 	natsgo "github.com/nats-io/nats.go"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -143,7 +144,7 @@ func run(parentContext context.Context) error {
 	grpcServer := internalgrpc.NewServer()
 	userv1.RegisterUserServiceServer(grpcServer, userGRPCServer)
 
-	grpcListener, grpcListenError := net.Listen("tcp", applicationConfiguration.GRPCListenAddress)
+	grpcListener, grpcListenError := (&net.ListenConfig{}).Listen(parentContext, "tcp", applicationConfiguration.GRPCListenAddress)
 	if grpcListenError != nil {
 		return fmt.Errorf("grpc listen: %w", grpcListenError)
 	}
@@ -170,17 +171,41 @@ func run(parentContext context.Context) error {
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
 				return redisClient.Ping(ctx).Err()
 			}),
-			health.NewNATSChecker("nats", func(context.Context) error {
-				if natsConnection.Status() != natsgo.CONNECTED {
-					return fmt.Errorf("nats not connected: %s", natsConnection.Status().String())
-				}
-				return natsConnection.FlushTimeout(2 * time.Second)
-			}),
+			health.NewNATSChecker("nats", natsHealthCheck(natsConnection)),
 		},
 	})
 
 	group, groupContext := errgroup.WithContext(parentContext)
+	registerWorkers(group, groupContext, applicationConfiguration, application, grpcServer, grpcListener, scheduler, notificationConsumer, auditLogConsumer, webSocketHub)
 
+	if waitError := group.Wait(); waitError != nil && !errors.Is(waitError, context.Canceled) {
+		return fmt.Errorf("run: %w", waitError)
+	}
+
+	return nil
+}
+
+func natsHealthCheck(natsConnection *natsgo.Conn) func(context.Context) error {
+	return func(context.Context) error {
+		if natsConnection.Status() != natsgo.CONNECTED {
+			return fmt.Errorf("nats not connected: %s", natsConnection.Status().String())
+		}
+		return natsConnection.FlushTimeout(2 * time.Second)
+	}
+}
+
+func registerWorkers(
+	group *errgroup.Group,
+	groupContext context.Context,
+	applicationConfiguration *config.Config,
+	application *fiber.App,
+	grpcServer *grpc.Server,
+	grpcListener net.Listener,
+	scheduler *cron.Scheduler,
+	notificationConsumer *consumers.NotificationConsumer,
+	auditLogConsumer *consumers.AuditLogConsumer,
+	webSocketHub *appwebsocket.Hub,
+) {
 	group.Go(func() error {
 		scheduler.Start(groupContext)
 		<-groupContext.Done()
@@ -207,21 +232,21 @@ func run(parentContext context.Context) error {
 
 	group.Go(func() error {
 		if runError := notificationConsumer.Run(groupContext); runError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
-			return fmt.Errorf("notification consumer run: %w", runError)
+			return fmt.Errorf("notification consumer: %w", runError)
 		}
 		return nil
 	})
 
 	group.Go(func() error {
 		if runError := auditLogConsumer.Run(groupContext); runError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
-			return fmt.Errorf("audit consumer run: %w", runError)
+			return fmt.Errorf("audit consumer: %w", runError)
 		}
 		return nil
 	})
 
 	group.Go(func() error {
 		if subscribeError := webSocketHub.Subscribe(groupContext, appwebsocket.DefaultChannel); subscribeError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
-			return fmt.Errorf("websocket subscribe run: %w", subscribeError)
+			return fmt.Errorf("websocket subscribe: %w", subscribeError)
 		}
 		return nil
 	})
@@ -238,10 +263,4 @@ func run(parentContext context.Context) error {
 		grpcServer.GracefulStop()
 		return nil
 	})
-
-	if waitError := group.Wait(); waitError != nil && !errors.Is(waitError, context.Canceled) {
-		return waitError
-	}
-
-	return nil
 }

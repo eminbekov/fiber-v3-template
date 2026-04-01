@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
@@ -43,12 +44,15 @@ func (handler *AuthHandler) Login(ctx fiber.Ctx) error {
 
 	fieldErrors := requestDTO.ValidateDTO(request)
 	if len(fieldErrors) > 0 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: "validation failed",
 				Details: fieldErrors,
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("authHandler.Login: %w", jsonError)
+		}
+		return nil
 	}
 
 	sessionToken, loginError := handler.authService.Login(
@@ -59,16 +63,19 @@ func (handler *AuthHandler) Login(ctx fiber.Ctx) error {
 		ctx.Get(fiber.HeaderUserAgent),
 	)
 	if loginError != nil {
-		return loginError
+		return fmt.Errorf("authHandler.Login: %w", loginError)
 	}
 
 	sessionExpiresAt := time.Now().UTC().Add(handler.authService.SessionDuration())
-	return ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response{
 		Data: responseV1.LoginResponse{
 			Token:     sessionToken,
 			ExpiresAt: sessionExpiresAt,
 		},
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("authHandler.Login: %w", jsonError)
+	}
+	return nil
 }
 
 // Logout invalidates the active session token.
@@ -90,8 +97,11 @@ func (handler *AuthHandler) Logout(ctx fiber.Ctx) error {
 	}
 
 	if logoutError := handler.authService.Logout(ctx.Context(), sessionToken); logoutError != nil {
-		return logoutError
+		return fmt.Errorf("authHandler.Logout: %w", logoutError)
 	}
 
-	return ctx.SendStatus(fiber.StatusNoContent)
+	if sendError := ctx.SendStatus(fiber.StatusNoContent); sendError != nil {
+		return fmt.Errorf("authHandler.Logout: %w", sendError)
+	}
+	return nil
 }

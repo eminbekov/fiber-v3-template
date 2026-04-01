@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
@@ -41,9 +42,12 @@ func ErrorHandler(ctx fiber.Ctx, err error) error {
 		"request_id", ctx.Get("X-Request-ID"),
 	)
 
-	return ctx.Status(statusCode).JSON(response.ErrorResponse{
+	if jsonError := ctx.Status(statusCode).JSON(response.ErrorResponse{
 		Error: response.ErrorBody{
 			Message: message,
 		},
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("ErrorHandler: %w", jsonError)
+	}
+	return nil
 }

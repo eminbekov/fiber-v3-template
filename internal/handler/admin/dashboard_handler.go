@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
@@ -29,7 +30,7 @@ func (handler *DashboardHandler) Index(ctx fiber.Ctx) error {
 		return handler.translator.Translate(language, key)
 	}
 
-	return ctx.Render("admin/dashboard", fiber.Map{
+	if renderError := ctx.Render("admin/dashboard", fiber.Map{
 		"Title": translate("dashboard.title"),
 		"T":     translate,
 		"Stats": DashboardViewData{
@@ -37,5 +38,8 @@ func (handler *DashboardHandler) Index(ctx fiber.Ctx) error {
 			SessionsOpen: 0,
 			LastUpdated:  time.Now().UTC(),
 		},
-	}, "layouts/base")
+	}, "layouts/base"); renderError != nil {
+		return fmt.Errorf("dashboardHandler.Index: %w", renderError)
+	}
+	return nil
 }
