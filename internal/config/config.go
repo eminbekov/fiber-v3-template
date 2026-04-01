@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -11,12 +12,15 @@ const (
 	EnvironmentVariableName       = "ENVIRONMENT"
 	LogLevelVariableName          = "LOG_LEVEL"
 	HTTPListenAddressVariableName = "HTTP_LISTEN_ADDRESS"
+	CORSAllowOriginsVariableName  = "CORS_ALLOW_ORIGINS"
+	BodyLimitVariableName         = "BODY_LIMIT"
 )
 
 const (
 	DefaultEnvironment       = "development"
 	DefaultLogLevel          = "debug"
 	DefaultHTTPListenAddress = ":8080"
+	DefaultBodyLimit         = 4 * 1024 * 1024
 )
 
 // Config holds application settings loaded from the environment.
@@ -24,6 +28,8 @@ type Config struct {
 	Environment       string
 	LogLevel          string
 	HTTPListenAddress string
+	CORSAllowOrigins  string
+	BodyLimit         int
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -32,6 +38,16 @@ func Load() (*Config, error) {
 		Environment:       strings.ToLower(strings.TrimSpace(getenvOrDefault(EnvironmentVariableName, DefaultEnvironment))),
 		LogLevel:          strings.ToLower(strings.TrimSpace(getenvOrDefault(LogLevelVariableName, DefaultLogLevel))),
 		HTTPListenAddress: strings.TrimSpace(getenvOrDefault(HTTPListenAddressVariableName, DefaultHTTPListenAddress)),
+		CORSAllowOrigins:  strings.TrimSpace(os.Getenv(CORSAllowOriginsVariableName)),
+		BodyLimit:         DefaultBodyLimit,
+	}
+
+	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {
+		parsedBodyLimit, parseError := strconv.Atoi(configuredBodyLimit)
+		if parseError != nil {
+			return nil, fmt.Errorf("config: invalid %s: %w", BodyLimitVariableName, parseError)
+		}
+		loadedConfig.BodyLimit = parsedBodyLimit
 	}
 
 	if validationError := loadedConfig.validate(); validationError != nil {
@@ -73,6 +89,9 @@ func (loadedConfig *Config) validate() error {
 
 	if loadedConfig.HTTPListenAddress == "" {
 		return fmt.Errorf("config: %s cannot be empty", HTTPListenAddressVariableName)
+	}
+	if loadedConfig.BodyLimit <= 0 {
+		return fmt.Errorf("config: %s must be greater than 0", BodyLimitVariableName)
 	}
 
 	return nil
