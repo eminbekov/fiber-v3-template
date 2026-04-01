@@ -113,7 +113,6 @@ services:
       - "3200:3200"
     volumes:
       - ../../monitoring/tempo/tempo-config.yml:/etc/tempo/tempo-config.yml
-      - tempo_data:/tmp/tempo
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.115.1
@@ -152,5 +151,4 @@ volumes:
   uploads_data:
   prometheus_data:
   loki_data:
-  tempo_data:
   grafana_data:

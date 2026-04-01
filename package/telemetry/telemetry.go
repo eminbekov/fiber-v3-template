@@ -31,17 +31,13 @@ func Setup(ctx context.Context, endpoint string) (func(context.Context) error, e
 		}, nil
 	}
 
-	telemetryResource, resourceError := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(serviceName),
-			attribute.String("environment", "runtime"),
-		),
+	// Single resource with one semconv schema URL — do not merge with resource.Default()
+	// (Default uses a newer schema and triggers "conflicting Schema URL" with semconv v1.26).
+	telemetryResource := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(serviceName),
+		attribute.String("environment", "runtime"),
 	)
-	if resourceError != nil {
-		return nil, fmt.Errorf("merge resource: %w", resourceError)
-	}
 
 	traceExporter, traceExporterError := otlptracegrpc.New(
 		ctx,
