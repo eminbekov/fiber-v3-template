@@ -3,13 +3,18 @@ package admin
 import (
 	"time"
 
+	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/gofiber/fiber/v3"
 )
 
-type DashboardHandler struct{}
+type DashboardHandler struct {
+	translator *i18n.Translator
+}
 
-func NewDashboardHandler() *DashboardHandler {
-	return &DashboardHandler{}
+func NewDashboardHandler(translator *i18n.Translator) *DashboardHandler {
+	return &DashboardHandler{
+		translator: translator,
+	}
 }
 
 func (handler *DashboardHandler) Index(ctx fiber.Ctx) error {
@@ -19,8 +24,14 @@ func (handler *DashboardHandler) Index(ctx fiber.Ctx) error {
 		LastUpdated  time.Time
 	}
 
+	language, _ := ctx.Locals("language").(string)
+	translate := func(key string) string {
+		return handler.translator.Translate(language, key)
+	}
+
 	return ctx.Render("admin/dashboard", fiber.Map{
-		"Title": "Dashboard",
+		"Title": translate("dashboard.title"),
+		"T":     translate,
 		"Stats": DashboardViewData{
 			UsersCount:   0,
 			SessionsOpen: 0,

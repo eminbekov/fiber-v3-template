@@ -1,0 +1,12 @@
+{
+  "dashboard.title": "Dashboard",
+  "dashboard.welcome_message": "Welcome to the admin dashboard.",
+  "dashboard.users": "Users",
+  "dashboard.open_sessions": "Open sessions",
+  "dashboard.last_updated": "Last updated",
+  "validation.required": "{{.Field}} is required",
+  "validation.invalid_id": "Invalid identifier",
+  "general.validation_failed": "Validation failed",
+  "general.internal_error": "Something went wrong, please try again later",
+  "user.not_found": "User not found"
+}
