@@ -1,0 +1,12 @@
+{
+  "dashboard.title": "Панель управления",
+  "dashboard.welcome_message": "Добро пожаловать в панель администратора.",
+  "dashboard.users": "Пользователи",
+  "dashboard.open_sessions": "Активные сессии",
+  "dashboard.last_updated": "Последнее обновление",
+  "validation.required": "{{.Field}} обязательно для заполнения",
+  "validation.invalid_id": "Некорректный идентификатор",
+  "general.validation_failed": "Ошибка валидации",
+  "general.internal_error": "Что-то пошло не так, попробуйте позже",
+  "user.not_found": "Пользователь не найден"
+}

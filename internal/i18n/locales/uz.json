@@ -1,0 +1,12 @@
+{
+  "dashboard.title": "Boshqaruv paneli",
+  "dashboard.welcome_message": "Admin paneliga xush kelibsiz.",
+  "dashboard.users": "Foydalanuvchilar",
+  "dashboard.open_sessions": "Faol sessiyalar",
+  "dashboard.last_updated": "Oxirgi yangilanish",
+  "validation.required": "{{.Field}} maydoni majburiy",
+  "validation.invalid_id": "Noto'g'ri identifikator",
+  "general.validation_failed": "Validatsiya xatosi",
+  "general.internal_error": "Xatolik yuz berdi, keyinroq urinib ko'ring",
+  "user.not_found": "Foydalanuvchi topilmadi"
+}
