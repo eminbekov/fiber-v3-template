@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	_ "github.com/eminbekov/fiber-v3-template/docs"
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
@@ -13,6 +15,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/swagger"
+	"github.com/gofiber/template/html/v2"
 )
 
 type Dependencies struct {
@@ -32,10 +35,16 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		Name string `json:"name"`
 	}
 
+	templateEngine := html.New(applicationConfiguration.ViewsPath, ".html")
+	templateEngine.AddFunc("formatDate", func(value time.Time) string {
+		return value.Format("2006-01-02 15:04")
+	})
+
 	application := fiber.New(fiber.Config{
 		AppName:      "fiber-v3-template",
 		BodyLimit:    applicationConfiguration.BodyLimit,
 		ErrorHandler: appHandler.ErrorHandler,
+		Views:        templateEngine,
 	})
 	application.Use(middleware.NewRecover())
 	application.Use(middleware.NewMetrics())
