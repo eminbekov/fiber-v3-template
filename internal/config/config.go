@@ -22,6 +22,15 @@ const (
 	RedisURLVariableName          = "REDIS_URL"
 	NATSURLVariableName           = "NATS_URL"
 	SessionDurationVariableName   = "SESSION_DURATION"
+	StorageTypeVariableName       = "STORAGE_TYPE"
+	StorageLocalBasePathVarName   = "STORAGE_LOCAL_BASE_PATH"
+	S3EndpointVariableName        = "S3_ENDPOINT"
+	S3BucketVariableName          = "S3_BUCKET"
+	S3AccessKeyVariableName       = "S3_ACCESS_KEY"
+	S3SecretKeyVariableName       = "S3_SECRET_KEY"
+	S3RegionVariableName          = "S3_REGION"
+	CDNBaseURLVariableName        = "CDN_BASE_URL"
+	FileSigningKeyVariableName    = "FILE_SIGNING_KEY"
 )
 
 const (
@@ -33,6 +42,8 @@ const (
 	DefaultViewsPath         = "./views"
 	DefaultBodyLimit         = 4 * 1024 * 1024
 	DefaultSessionDuration   = "24h"
+	DefaultStorageType       = "local"
+	DefaultStorageLocalPath  = "./uploads"
 )
 
 // Config holds application settings loaded from the environment.
@@ -49,6 +60,15 @@ type Config struct {
 	RedisURL             string
 	NATSURL              string
 	SessionDuration      time.Duration
+	StorageType          string
+	StorageLocalBasePath string
+	S3Endpoint           string
+	S3Bucket             string
+	S3AccessKey          string
+	S3SecretKey          string
+	S3Region             string
+	CDNBaseURL           string
+	FileSigningKey       string
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -66,6 +86,15 @@ func Load() (*Config, error) {
 		RedisURL:             strings.TrimSpace(os.Getenv(RedisURLVariableName)),
 		NATSURL:              strings.TrimSpace(getenvOrDefault(NATSURLVariableName, DefaultNATSURL)),
 		SessionDuration:      24 * time.Hour,
+		StorageType:          strings.ToLower(strings.TrimSpace(getenvOrDefault(StorageTypeVariableName, DefaultStorageType))),
+		StorageLocalBasePath: strings.TrimSpace(getenvOrDefault(StorageLocalBasePathVarName, DefaultStorageLocalPath)),
+		S3Endpoint:           strings.TrimSpace(os.Getenv(S3EndpointVariableName)),
+		S3Bucket:             strings.TrimSpace(os.Getenv(S3BucketVariableName)),
+		S3AccessKey:          strings.TrimSpace(os.Getenv(S3AccessKeyVariableName)),
+		S3SecretKey:          strings.TrimSpace(os.Getenv(S3SecretKeyVariableName)),
+		S3Region:             strings.TrimSpace(os.Getenv(S3RegionVariableName)),
+		CDNBaseURL:           strings.TrimSpace(os.Getenv(CDNBaseURLVariableName)),
+		FileSigningKey:       strings.TrimSpace(os.Getenv(FileSigningKeyVariableName)),
 	}
 
 	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {
@@ -140,6 +169,39 @@ func (loadedConfig *Config) validate() error {
 	}
 	if loadedConfig.NATSURL == "" {
 		return fmt.Errorf("config: %s cannot be empty", NATSURLVariableName)
+	}
+
+	switch loadedConfig.StorageType {
+	case "s3", "local":
+	default:
+		return fmt.Errorf(
+			"config: invalid %s %q (allowed: s3, local)",
+			StorageTypeVariableName,
+			loadedConfig.StorageType,
+		)
+	}
+
+	if loadedConfig.FileSigningKey == "" {
+		return fmt.Errorf("config: %s cannot be empty", FileSigningKeyVariableName)
+	}
+
+	if loadedConfig.StorageType == "s3" {
+		if loadedConfig.S3Bucket == "" {
+			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3BucketVariableName, StorageTypeVariableName)
+		}
+		if loadedConfig.S3AccessKey == "" {
+			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3AccessKeyVariableName, StorageTypeVariableName)
+		}
+		if loadedConfig.S3SecretKey == "" {
+			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3SecretKeyVariableName, StorageTypeVariableName)
+		}
+		if loadedConfig.S3Region == "" {
+			return fmt.Errorf("config: %s cannot be empty when %s=s3", S3RegionVariableName, StorageTypeVariableName)
+		}
+	}
+
+	if loadedConfig.StorageType == "local" && loadedConfig.StorageLocalBasePath == "" {
+		return fmt.Errorf("config: %s cannot be empty when %s=local", StorageLocalBasePathVarName, StorageTypeVariableName)
 	}
 
 	return nil

@@ -22,6 +22,7 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 │   ├── dto/response/    # Standard API success/error envelopes
 │   ├── handler/         # Centralized error handler + API v1 handlers
 │   ├── middleware/      # Recovery, metrics, request ID, logging, CORS, Helmet, body limit
+│   ├── storage/         # File storage abstraction (local filesystem, S3-compatible)
 │   └── router/          # Fiber app + middleware and route registration
 ├── migrations/          # Sequential SQL migrations (up/down)
 ├── package/
@@ -48,6 +49,18 @@ Copy [`.env.example`](.env.example) to `.env` for local development and adjust v
 | `OTEL_EXPORTER_ENDPOINT` | No | (empty) | OpenTelemetry collector endpoint (`host:port`). Empty disables telemetry export. |
 | `DATABASE_URL` | Yes | (none) | PostgreSQL connection URL used by the server and migration CLI. |
 | `REDIS_URL` | Yes | (none) | Redis connection URL used for cache and optional session storage. |
+| `NATS_URL` | No | `nats://localhost:4222` | NATS server URL. |
+| `GRPC_LISTEN_ADDRESS` | No | `:9090` | gRPC listen address. |
+| `SESSION_DURATION` | No | `24h` | Session lifetime (Go duration). |
+| `STORAGE_TYPE` | No | `local` | `local` or `s3`. |
+| `STORAGE_LOCAL_BASE_PATH` | No | `./uploads` | Root directory for uploads when `STORAGE_TYPE=local`. |
+| `S3_ENDPOINT` | When `STORAGE_TYPE=s3` | (empty) | Custom endpoint for MinIO; leave empty for AWS S3. |
+| `S3_BUCKET` | When `STORAGE_TYPE=s3` | (none) | Bucket name. |
+| `S3_ACCESS_KEY` | When `STORAGE_TYPE=s3` | (none) | Access key. |
+| `S3_SECRET_KEY` | When `STORAGE_TYPE=s3` | (none) | Secret key. |
+| `S3_REGION` | When `STORAGE_TYPE=s3` | (none) | Region (for example `us-east-1`). |
+| `CDN_BASE_URL` | No | (empty) | Optional public URL prefix for CDN or reverse-proxy (no trailing slash). |
+| `FILE_SIGNING_KEY` | Yes | (none) | Secret for HMAC-signed file URLs (use a long random value in production). |
 
 ## Run
 

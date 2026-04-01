@@ -24,6 +24,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/router"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/eminbekov/fiber-v3-template/internal/session"
+	"github.com/eminbekov/fiber-v3-template/internal/storage"
 	"github.com/eminbekov/fiber-v3-template/package/hasher"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
@@ -78,6 +79,11 @@ func run(parentContext context.Context) error {
 		return fmt.Errorf("database pool: %w", databasePoolError)
 	}
 	defer databasePool.Close()
+
+	fileStorage, fileStorageError := storage.NewFromApplicationConfig(parentContext, applicationConfiguration)
+	if fileStorageError != nil {
+		return fmt.Errorf("file storage: %w", fileStorageError)
+	}
 
 	redisClient, redisClientError := cache.NewRedisClient(applicationConfiguration.RedisURL)
 	if redisClientError != nil {
@@ -137,6 +143,7 @@ func run(parentContext context.Context) error {
 		DashboardHandler:     dashboardHandler,
 		Translator:           translator,
 		Cache:                applicationCache,
+		FileStorage:          fileStorage,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
