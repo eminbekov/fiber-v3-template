@@ -32,7 +32,7 @@ func run(parentContext context.Context) error {
 
 	logger.Setup(applicationConfiguration.LogLevel, applicationConfiguration.Environment)
 
-	application := router.New()
+	application := router.New(applicationConfiguration)
 
 	go func() {
 		<-parentContext.Done()
