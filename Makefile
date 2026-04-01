@@ -3,6 +3,9 @@ BUILD_DIR := bin
 SERVER_MAIN_PATH := cmd/server/main.go
 CRON_MAIN_PATH := cmd/cron/main.go
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
+DOCKERFILE_PATH := deploy/docker/Dockerfile
+DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
+DOCKER_COMPOSE_DEV_PATH := deploy/docker/docker-compose.dev.yml
 
 .PHONY: build
 build: ## Build the HTTP server binary
@@ -53,6 +56,44 @@ proto: ## Generate Go code from protobuf definitions
 	protoc --go_out=gen --go_opt=paths=source_relative \
 	       --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
 	       proto/**/**/*.proto
+
+.PHONY: docker-build
+docker-build: ## Build application Docker image
+	docker build -t $(APP_NAME):latest -f $(DOCKERFILE_PATH) .
+
+.PHONY: docker-up
+docker-up: ## Start full application stack with Docker Compose
+	docker compose -f $(DOCKER_COMPOSE_PATH) up -d
+
+.PHONY: docker-down
+docker-down: ## Stop full application stack with Docker Compose
+	docker compose -f $(DOCKER_COMPOSE_PATH) down
+
+.PHONY: docker-dev
+docker-dev: ## Start development dependencies only (Postgres, Redis, NATS)
+	docker compose -f $(DOCKER_COMPOSE_DEV_PATH) up -d
+
+.PHONY: docker-dev-down
+docker-dev-down: ## Stop development dependencies
+	docker compose -f $(DOCKER_COMPOSE_DEV_PATH) down
+
+.PHONY: docker-logs
+docker-logs: ## Tail full stack container logs
+	docker compose -f $(DOCKER_COMPOSE_PATH) logs -f
+
+.PHONY: docker-ps
+docker-ps: ## Show full stack container status
+	docker compose -f $(DOCKER_COMPOSE_PATH) ps
+
+.PHONY: docker-migrate
+docker-migrate: ## Run database migrations inside app container
+	docker compose -f $(DOCKER_COMPOSE_PATH) exec app ./migrate up
+
+.PHONY: docker-health
+docker-health: ## Check server health endpoints
+	curl -fsS http://localhost:8080/health/live
+	curl -fsS http://localhost:8080/health/ready
+	curl -fsS http://localhost:8080/metrics >/dev/null
 
 .PHONY: help
 help: ## Show available make targets
