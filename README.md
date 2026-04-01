@@ -11,8 +11,10 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 ```text
 .
 ├── cmd/server/          # HTTP server entrypoint (config, logger, graceful shutdown)
+├── cmd/cron/            # Scheduled job runner entrypoint (separate deployment option)
 ├── cmd/migrate/         # Database migration CLI entrypoint
 ├── internal/
+│   ├── cron/            # Ticker-based scheduler for periodic jobs
 │   ├── config/          # Typed configuration from environment variables
 │   ├── cache/           # Redis client, cache interface, key builders, cache implementation
 │   ├── database/        # PostgreSQL pool setup and pool registry
@@ -67,6 +69,12 @@ Copy [`.env.example`](.env.example) to `.env` for local development and adjust v
 
 ```bash
 go run ./cmd/server
+```
+
+Cron worker (separate process):
+
+```bash
+go run ./cmd/cron
 ```
 
 With overrides:
@@ -124,6 +132,19 @@ go run ./cmd/migrate up
 go run ./cmd/migrate down 1
 go run ./cmd/migrate version
 go run ./cmd/migrate force 1
+```
+
+## Cron / scheduled jobs
+
+- In-process mode is wired in `cmd/server/main.go` and runs jobs under the same `errgroup` cancellation context as HTTP, gRPC, and consumers.
+- Separate mode is available in `cmd/cron/main.go` for production deployments where cron should run only once across multiple app instances.
+- Jobs are registered through `internal/cron/scheduler.go` with structured start/completion/failure logging and graceful stop via `context.Context`.
+
+Useful commands:
+
+```bash
+make build-cron
+make run-cron
 ```
 
 ## Repository layer

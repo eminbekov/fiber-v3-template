@@ -121,8 +121,8 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 12 — Cron and scheduled jobs
 
-- In-process scheduler *or* separate `cmd/cron` binary (guide §30).
-- Register jobs with shared services via DI; graceful stop on signal (guide §30).
+- [x] In-process scheduler *or* separate `cmd/cron` binary (guide §30).
+- [x] Register jobs with shared services via DI; graceful stop on signal (guide §30).
 
 ---
 
