@@ -72,7 +72,7 @@ func run(parentContext context.Context) error {
 	applicationCache := cache.NewRedisCache(redisClient)
 	passwordHasher := hasher.NewArgon2ID()
 	sessionStore := session.NewRedisStore(redisClient, applicationConfiguration.SessionDuration)
-	userService := service.NewUserService(userRepository, applicationCache, passwordHasher)
+	userService := service.NewUserService(userRepository, roleRepository, applicationCache, passwordHasher)
 	authService := service.NewAuthService(
 		userRepository,
 		sessionStore,

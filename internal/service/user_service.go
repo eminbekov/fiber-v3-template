@@ -22,13 +22,20 @@ const (
 
 type UserService struct {
 	userRepository repository.UserRepository
+	roleRepository repository.RoleRepository
 	cache          cache.Cache
 	passwordHasher PasswordHasher
 }
 
-func NewUserService(userRepository repository.UserRepository, cache cache.Cache, passwordHasher PasswordHasher) *UserService {
+func NewUserService(
+	userRepository repository.UserRepository,
+	roleRepository repository.RoleRepository,
+	cache cache.Cache,
+	passwordHasher PasswordHasher,
+) *UserService {
 	return &UserService{
 		userRepository: userRepository,
+		roleRepository: roleRepository,
 		cache:          cache,
 		passwordHasher: passwordHasher,
 	}
@@ -142,8 +149,8 @@ func (service *UserService) Create(ctx context.Context, user *domain.User) error
 	return nil
 }
 
-func (service *UserService) Update(ctx context.Context, user *domain.User) error {
-	if user == nil || user.ID == uuid.Nil {
+func (service *UserService) Update(ctx context.Context, requesterID uuid.UUID, user *domain.User) error {
+	if requesterID == uuid.Nil || user == nil || user.ID == uuid.Nil {
 		return domain.ErrValidation
 	}
 
@@ -155,12 +162,26 @@ func (service *UserService) Update(ctx context.Context, user *domain.User) error
 	}
 
 	currentUser, findByIDError := service.userRepository.FindByID(ctx, user.ID)
+	if findByIDError != nil {
+		return fmt.Errorf("UserService.Update find by id: %w", findByIDError)
+	}
 	if user.PasswordHash == "" {
 		user.PasswordHash = currentUser.PasswordHash
 	}
 
-	if findByIDError != nil {
-		return fmt.Errorf("UserService.Update find by id: %w", findByIDError)
+	requesterRoles, requesterRolesError := service.roleRepository.FindByUserID(ctx, requesterID)
+	if requesterRolesError != nil {
+		return fmt.Errorf("UserService.Update requester roles: %w", requesterRolesError)
+	}
+	requesterIsAdmin := false
+	for _, role := range requesterRoles {
+		if role.Name == "admin" {
+			requesterIsAdmin = true
+			break
+		}
+	}
+	if !requesterIsAdmin && requesterID != user.ID {
+		return domain.ErrForbidden
 	}
 
 	if currentUser.Username != user.Username {
