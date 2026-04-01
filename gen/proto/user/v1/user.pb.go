@@ -425,6 +425,7 @@ type UpdateUserRequest struct {
 	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
 	FullName      string                 `protobuf:"bytes,4,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
 	Phone         string                 `protobuf:"bytes,5,opt,name=phone,proto3" json:"phone,omitempty"`
+	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -490,6 +491,13 @@ func (x *UpdateUserRequest) GetFullName() string {
 func (x *UpdateUserRequest) GetPhone() string {
 	if x != nil {
 		return x.Phone
+	}
+	return ""
+}
+
+func (x *UpdateUserRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
 	}
 	return ""
 }
@@ -650,13 +658,14 @@ const file_proto_user_v1_user_proto_rawDesc = "" +
 	"\x05phone\x18\x03 \x01(\tR\x05phone\x12\x1a\n" +
 	"\bpassword\x18\x04 \x01(\tR\bpassword\"7\n" +
 	"\x12CreateUserResponse\x12!\n" +
-	"\x04user\x18\x01 \x01(\v2\r.user.v1.UserR\x04user\"\x95\x01\n" +
+	"\x04user\x18\x01 \x01(\v2\r.user.v1.UserR\x04user\"\xad\x01\n" +
 	"\x11UpdateUserRequest\x12!\n" +
 	"\frequester_id\x18\x01 \x01(\tR\vrequesterId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x03 \x01(\tR\busername\x12\x1b\n" +
 	"\tfull_name\x18\x04 \x01(\tR\bfullName\x12\x14\n" +
-	"\x05phone\x18\x05 \x01(\tR\x05phone\"7\n" +
+	"\x05phone\x18\x05 \x01(\tR\x05phone\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\"7\n" +
 	"\x12UpdateUserResponse\x12!\n" +
 	"\x04user\x18\x01 \x01(\v2\r.user.v1.UserR\x04user\"#\n" +
 	"\x11DeleteUserRequest\x12\x0e\n" +
