@@ -14,10 +14,14 @@ import (
 )
 
 type Dependencies struct {
-	UserRepository repository.UserRepository
-	UserService    *service.UserService
-	Cache          cache.Cache
-	HealthCheckers []health.Checker
+	UserRepository       repository.UserRepository
+	RoleRepository       repository.RoleRepository
+	PermissionRepository repository.PermissionRepository
+	UserService          *service.UserService
+	AuthService          *service.AuthService
+	AuthorizationService *service.AuthorizationService
+	Cache                cache.Cache
+	HealthCheckers       []health.Checker
 }
 
 // New builds the Fiber application with routes and middleware (expand per GO_FIBER_PROJECT_GUIDE.md).
@@ -39,9 +43,11 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
 	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
 	apiV1Handler := v1.NewHandler()
+	authHandler := v1.NewAuthHandler(dependencies.AuthService)
 	userHandler := v1.NewUserHandler(dependencies.UserService)
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
+	protectedAPIGroup := apiV1Group.Group("", middleware.NewAuthenticate(dependencies.AuthService))
 
 	application.Get("/health/live", healthHandler.Liveness)
 	application.Get("/health/ready", healthHandler.Readiness)
@@ -55,11 +61,13 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		})
 	})
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
-	apiV1Group.Post("/users", userHandler.Create)
-	apiV1Group.Get("/users", userHandler.List)
-	apiV1Group.Get("/users/:id", userHandler.FindByID)
-	apiV1Group.Put("/users/:id", userHandler.Update)
-	apiV1Group.Delete("/users/:id", userHandler.Delete)
+	apiV1Group.Post("/auth/login", authHandler.Login)
+	protectedAPIGroup.Post("/auth/logout", authHandler.Logout)
+	protectedAPIGroup.Post("/users", middleware.RequirePermission(dependencies.AuthorizationService, "users", "create"), userHandler.Create)
+	protectedAPIGroup.Get("/users", middleware.RequirePermission(dependencies.AuthorizationService, "users", "read"), userHandler.List)
+	protectedAPIGroup.Get("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "read"), userHandler.FindByID)
+	protectedAPIGroup.Put("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "update"), userHandler.Update)
+	protectedAPIGroup.Delete("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "delete"), userHandler.Delete)
 
 	return application
 }

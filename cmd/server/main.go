@@ -15,6 +15,8 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
+	"github.com/eminbekov/fiber-v3-template/internal/session"
+	"github.com/eminbekov/fiber-v3-template/package/hasher"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
@@ -65,13 +67,28 @@ func run(parentContext context.Context) error {
 	}()
 
 	userRepository := postgres.NewUserRepository(databasePool)
+	roleRepository := postgres.NewRoleRepository(databasePool)
+	permissionRepository := postgres.NewPermissionRepository(databasePool)
 	applicationCache := cache.NewRedisCache(redisClient)
-	userService := service.NewUserService(userRepository, applicationCache)
+	passwordHasher := hasher.NewArgon2ID()
+	sessionStore := session.NewRedisStore(redisClient, applicationConfiguration.SessionDuration)
+	userService := service.NewUserService(userRepository, applicationCache, passwordHasher)
+	authService := service.NewAuthService(
+		userRepository,
+		sessionStore,
+		passwordHasher,
+		applicationConfiguration.SessionDuration,
+	)
+	authorizationService := service.NewAuthorizationService(permissionRepository, applicationCache)
 
 	application := router.New(applicationConfiguration, router.Dependencies{
-		UserRepository: userRepository,
-		UserService:    userService,
-		Cache:          applicationCache,
+		UserRepository:       userRepository,
+		RoleRepository:       roleRepository,
+		PermissionRepository: permissionRepository,
+		UserService:          userService,
+		AuthService:          authService,
+		AuthorizationService: authorizationService,
+		Cache:                applicationCache,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
