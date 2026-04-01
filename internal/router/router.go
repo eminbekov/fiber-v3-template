@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/eminbekov/fiber-v3-template/internal/config"
+	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
@@ -10,6 +11,10 @@ import (
 
 // New builds the Fiber application with routes and middleware (expand per GO_FIBER_PROJECT_GUIDE.md).
 func New(applicationConfiguration *config.Config) *fiber.App {
+	type RootResponse struct {
+		Name string `json:"name"`
+	}
+
 	application := fiber.New(fiber.Config{
 		AppName:      "fiber-v3-template",
 		BodyLimit:    applicationConfiguration.BodyLimit,
@@ -33,8 +38,10 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 	})
 
 	application.Get("/", func(context fiber.Ctx) error {
-		return context.JSON(fiber.Map{
-			"name": "fiber-v3-template",
+		return context.JSON(response.Response{
+			Data: RootResponse{
+				Name: "fiber-v3-template",
+			},
 		})
 	})
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
