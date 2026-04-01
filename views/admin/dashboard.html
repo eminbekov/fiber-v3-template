@@ -1,0 +1,11 @@
+{{define "admin/dashboard"}}
+<section>
+    <h1>{{.Title}}</h1>
+    <p>Welcome to the admin dashboard.</p>
+    <ul>
+        <li>Users: {{.Stats.UsersCount}}</li>
+        <li>Open sessions: {{.Stats.SessionsOpen}}</li>
+        <li>Last updated: {{formatDate .Stats.LastUpdated}}</li>
+    </ul>
+</section>
+{{end}}

@@ -8,6 +8,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
+	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
@@ -25,6 +26,7 @@ type Dependencies struct {
 	UserService          *service.UserService
 	AuthService          *service.AuthService
 	AuthorizationService *service.AuthorizationService
+	DashboardHandler     *admin.DashboardHandler
 	Cache                cache.Cache
 	HealthCheckers       []health.Checker
 }
@@ -56,8 +58,10 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	apiV1Handler := v1.NewHandler()
 	authHandler := v1.NewAuthHandler(dependencies.AuthService)
 	userHandler := v1.NewUserHandler(dependencies.UserService)
+	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
+	adminGroup := application.Group("/admin", middleware.NewAuthenticate(dependencies.AuthService))
 	protectedAPIGroup := apiV1Group.Group("", middleware.NewAuthenticate(dependencies.AuthService))
 
 	application.Get("/health/live", healthHandler.Liveness)
@@ -74,6 +78,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 			},
 		})
 	})
+	adminGroup.Get("/dashboard", dashboardHandler.Index)
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
 	apiV1Group.Post("/auth/login", authHandler.Login)
 	protectedAPIGroup.Post("/auth/logout", authHandler.Logout)

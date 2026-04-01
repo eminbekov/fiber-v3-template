@@ -12,6 +12,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/database"
+	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
@@ -92,6 +93,7 @@ func run(parentContext context.Context) error {
 		applicationConfiguration.SessionDuration,
 	)
 	authorizationService := service.NewAuthorizationService(permissionRepository, applicationCache)
+	dashboardHandler := admin.NewDashboardHandler()
 
 	application := router.New(applicationConfiguration, router.Dependencies{
 		UserRepository:       userRepository,
@@ -100,6 +102,7 @@ func run(parentContext context.Context) error {
 		UserService:          userService,
 		AuthService:          authService,
 		AuthorizationService: authorizationService,
+		DashboardHandler:     dashboardHandler,
 		Cache:                applicationCache,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
