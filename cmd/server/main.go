@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
@@ -53,6 +54,16 @@ func run(parentContext context.Context) error {
 	}
 	defer databasePool.Close()
 
+	redisClient, redisClientError := cache.NewRedisClient(applicationConfiguration.RedisURL)
+	if redisClientError != nil {
+		return fmt.Errorf("redis: %w", redisClientError)
+	}
+	defer func() {
+		if closeError := redisClient.Close(); closeError != nil {
+			slog.Error("redis close", "error", closeError)
+		}
+	}()
+
 	userRepository := postgres.NewUserRepository(databasePool)
 	userService := service.NewUserService(userRepository)
 
@@ -61,6 +72,9 @@ func run(parentContext context.Context) error {
 		UserService:    userService,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
+			health.NewRedisChecker("redis", func(ctx context.Context) error {
+				return redisClient.Ping(ctx).Err()
+			}),
 		},
 	})
 

@@ -16,6 +16,7 @@ const (
 	BodyLimitVariableName         = "BODY_LIMIT"
 	OTELExporterEndpointVarName   = "OTEL_EXPORTER_ENDPOINT"
 	DatabaseURLVariableName       = "DATABASE_URL"
+	RedisURLVariableName          = "REDIS_URL"
 )
 
 const (
@@ -34,6 +35,7 @@ type Config struct {
 	BodyLimit            int
 	OTELExporterEndpoint string
 	DatabaseURL          string
+	RedisURL             string
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -46,6 +48,7 @@ func Load() (*Config, error) {
 		BodyLimit:            DefaultBodyLimit,
 		OTELExporterEndpoint: strings.TrimSpace(os.Getenv(OTELExporterEndpointVarName)),
 		DatabaseURL:          strings.TrimSpace(os.Getenv(DatabaseURLVariableName)),
+		RedisURL:             strings.TrimSpace(os.Getenv(RedisURLVariableName)),
 	}
 
 	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {
@@ -101,6 +104,9 @@ func (loadedConfig *Config) validate() error {
 	}
 	if loadedConfig.DatabaseURL == "" {
 		return fmt.Errorf("config: %s cannot be empty", DatabaseURLVariableName)
+	}
+	if loadedConfig.RedisURL == "" {
+		return fmt.Errorf("config: %s cannot be empty", RedisURLVariableName)
 	}
 
 	return nil
