@@ -138,3 +138,31 @@ func (checker *RedisChecker) Check(ctx context.Context) error {
 
 	return checker.pingFunction(ctx)
 }
+
+// NATSChecker runs a ping function against a NATS dependency.
+type NATSChecker struct {
+	name         string
+	pingFunction func(context.Context) error
+}
+
+// NewNATSChecker creates a readiness checker backed by a ping function.
+func NewNATSChecker(name string, pingFunction func(context.Context) error) Checker {
+	return &NATSChecker{
+		name:         name,
+		pingFunction: pingFunction,
+	}
+}
+
+// Name returns checker name.
+func (checker *NATSChecker) Name() string {
+	return checker.name
+}
+
+// Check calls the configured ping function.
+func (checker *NATSChecker) Check(ctx context.Context) error {
+	if checker.pingFunction == nil {
+		return ErrNotReady
+	}
+
+	return checker.pingFunction(ctx)
+}

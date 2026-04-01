@@ -14,6 +14,8 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
+	appnats "github.com/eminbekov/fiber-v3-template/internal/nats"
+	"github.com/eminbekov/fiber-v3-template/internal/nats/consumers"
 	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
@@ -22,6 +24,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
+	natsgo "github.com/nats-io/nats.go"
 )
 
 // @title           Fiber v3 Template API
@@ -80,6 +83,25 @@ func run(parentContext context.Context) error {
 		}
 	}()
 
+	natsConnection, jetStream, natsConnectError := appnats.Connect(parentContext, applicationConfiguration.NATSURL)
+	if natsConnectError != nil {
+		return fmt.Errorf("nats: %w", natsConnectError)
+	}
+	defer natsConnection.Close()
+
+	notificationConsumer := consumers.NewNotificationConsumer(jetStream)
+	auditLogConsumer := consumers.NewAuditLogConsumer(jetStream)
+	go func() {
+		if runError := notificationConsumer.Run(parentContext); runError != nil {
+			slog.Error("notification consumer failed", "error", runError)
+		}
+	}()
+	go func() {
+		if runError := auditLogConsumer.Run(parentContext); runError != nil {
+			slog.Error("audit consumer failed", "error", runError)
+		}
+	}()
+
 	userRepository := postgres.NewUserRepository(databasePool)
 	roleRepository := postgres.NewRoleRepository(databasePool)
 	permissionRepository := postgres.NewPermissionRepository(databasePool)
@@ -114,6 +136,12 @@ func run(parentContext context.Context) error {
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
 				return redisClient.Ping(ctx).Err()
+			}),
+			health.NewNATSChecker("nats", func(context.Context) error {
+				if natsConnection.Status() != natsgo.CONNECTED {
+					return fmt.Errorf("nats not connected: %s", natsConnection.Status().String())
+				}
+				return natsConnection.FlushTimeout(2 * time.Second)
 			}),
 		},
 	})
