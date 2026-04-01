@@ -1,6 +1,7 @@
 package router
 
 import (
+	_ "github.com/eminbekov/fiber-v3-template/docs"
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
@@ -11,6 +12,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/swagger"
 )
 
 type Dependencies struct {
@@ -52,6 +54,9 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Get("/health/live", healthHandler.Liveness)
 	application.Get("/health/ready", healthHandler.Readiness)
 	application.Get("/metrics", middleware.MetricsHandler())
+	if applicationConfiguration.Environment != "production" {
+		application.Get("/swagger/*", swagger.HandlerDefault)
+	}
 
 	application.Get("/", func(context fiber.Ctx) error {
 		return context.JSON(response.Response{

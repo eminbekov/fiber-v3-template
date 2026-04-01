@@ -30,7 +30,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 // @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param        body  body      request.CreateUserRequest  true  "Create user request"
+// @Param        body  body      requestDTO.CreateUserRequest  true  "Create user request"
 // @Success      201   {object}  response.Response
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
@@ -164,8 +164,8 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 // @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param        id    path      string                    true  "User ID"
-// @Param        body  body      request.UpdateUserRequest true  "Update user request"
+// @Param        id    path      string                       true  "User ID"
+// @Param        body  body      requestDTO.UpdateUserRequest true  "Update user request"
 // @Success      200   {object}  response.Response
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
