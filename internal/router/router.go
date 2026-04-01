@@ -22,6 +22,7 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 		ErrorHandler: appHandler.ErrorHandler,
 	})
 	application.Use(middleware.NewRecover())
+	application.Use(middleware.NewMetrics())
 	application.Use(middleware.NewRequestID())
 	application.Use(middleware.NewRequestLogger())
 	application.Use(middleware.NewHelmet())
@@ -33,6 +34,7 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 
 	application.Get("/health/live", healthHandler.Liveness)
 	application.Get("/health/ready", healthHandler.Readiness)
+	application.Get("/metrics", middleware.MetricsHandler())
 
 	application.Get("/", func(context fiber.Ctx) error {
 		return context.JSON(response.Response{
