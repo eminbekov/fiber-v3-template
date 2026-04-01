@@ -7,12 +7,14 @@ import (
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
+	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
 )
 
 type Dependencies struct {
 	UserRepository repository.UserRepository
+	UserService    *service.UserService
 	HealthCheckers []health.Checker
 }
 
@@ -34,7 +36,8 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Use(middleware.NewHelmet())
 	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
 	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
-	apiV1Handler := v1.NewHandler(dependencies.UserRepository)
+	apiV1Handler := v1.NewHandler()
+	userHandler := v1.NewUserHandler(dependencies.UserService)
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
 
@@ -50,6 +53,11 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		})
 	})
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
+	apiV1Group.Post("/users", userHandler.Create)
+	apiV1Group.Get("/users", userHandler.List)
+	apiV1Group.Get("/users/:id", userHandler.FindByID)
+	apiV1Group.Put("/users/:id", userHandler.Update)
+	apiV1Group.Delete("/users/:id", userHandler.Delete)
 
 	return application
 }
