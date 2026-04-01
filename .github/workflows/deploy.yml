@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag to deploy
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Manual Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          # Required repository secrets for this reusable template:
+          # SERVER_HOST: target server address
+          # SERVER_USER: SSH username
+          # SSH_PRIVATE_KEY: private key with server access
+          # APP_DIR: absolute path where deploy/docker/docker-compose.yml is available
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.APP_DIR }}
+            IMAGE_TAG=${{ github.event.inputs.image_tag }} docker compose -f deploy/docker/docker-compose.yml pull
+            IMAGE_TAG=${{ github.event.inputs.image_tag }} docker compose -f deploy/docker/docker-compose.yml up -d
