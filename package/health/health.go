@@ -110,3 +110,31 @@ func (checker *DatabaseChecker) Check(ctx context.Context) error {
 
 	return checker.pingFunction(ctx)
 }
+
+// RedisChecker runs a ping function against a Redis dependency.
+type RedisChecker struct {
+	name         string
+	pingFunction func(context.Context) error
+}
+
+// NewRedisChecker creates a readiness checker backed by a ping function.
+func NewRedisChecker(name string, pingFunction func(context.Context) error) Checker {
+	return &RedisChecker{
+		name:         name,
+		pingFunction: pingFunction,
+	}
+}
+
+// Name returns checker name.
+func (checker *RedisChecker) Name() string {
+	return checker.name
+}
+
+// Check calls the configured ping function.
+func (checker *RedisChecker) Check(ctx context.Context) error {
+	if checker.pingFunction == nil {
+		return ErrNotReady
+	}
+
+	return checker.pingFunction(ctx)
+}
