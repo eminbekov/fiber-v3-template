@@ -18,7 +18,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	fiberwebsocket "github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/swagger"
+	"github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/template/html/v2"
 )
 
@@ -77,7 +77,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Get("/health/ready", healthHandler.Readiness)
 	application.Get("/metrics", middleware.MetricsHandler())
 	if applicationConfiguration.Environment != "production" {
-		application.Get("/swagger/*", swagger.HandlerDefault)
+		application.Get("/swagger/*", swaggo.HandlerDefault)
 	}
 
 	application.Get("/", func(context fiber.Ctx) error {
