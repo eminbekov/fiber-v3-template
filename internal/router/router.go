@@ -6,6 +6,7 @@ import (
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
+	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -27,15 +28,11 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
 	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
 	apiV1Handler := v1.NewHandler()
+	healthHandler := health.NewHandler()
 	apiV1Group := application.Group("/api/v1")
 
-	application.Get("/health/live", func(context fiber.Ctx) error {
-		return context.SendStatus(fiber.StatusOK)
-	})
-
-	application.Get("/health/ready", func(context fiber.Ctx) error {
-		return context.SendStatus(fiber.StatusOK)
-	})
+	application.Get("/health/live", healthHandler.Liveness)
+	application.Get("/health/ready", healthHandler.Readiness)
 
 	application.Get("/", func(context fiber.Ctx) error {
 		return context.JSON(response.Response{
