@@ -1,11 +1,11 @@
 {{define "admin/dashboard"}}
 <section>
     <h1>{{.Title}}</h1>
-    <p>Welcome to the admin dashboard.</p>
+    <p>{{call .T "dashboard.welcome_message"}}</p>
     <ul>
-        <li>Users: {{.Stats.UsersCount}}</li>
-        <li>Open sessions: {{.Stats.SessionsOpen}}</li>
-        <li>Last updated: {{formatDate .Stats.LastUpdated}}</li>
+        <li>{{call .T "dashboard.users"}}: {{.Stats.UsersCount}}</li>
+        <li>{{call .T "dashboard.open_sessions"}}: {{.Stats.SessionsOpen}}</li>
+        <li>{{call .T "dashboard.last_updated"}}: {{formatDate .Stats.LastUpdated}}</li>
     </ul>
 </section>
 {{end}}

@@ -8,6 +8,7 @@ import (
 	requestDTO "github.com/eminbekov/fiber-v3-template/internal/dto/request"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	responseV1 "github.com/eminbekov/fiber-v3-template/internal/dto/response/v1"
+	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofrs/uuid/v5"
@@ -15,11 +16,13 @@ import (
 
 type UserHandler struct {
 	userService *service.UserService
+	translator  *i18n.Translator
 }
 
-func NewUserHandler(userService *service.UserService) *UserHandler {
+func NewUserHandler(userService *service.UserService, translator *i18n.Translator) *UserHandler {
 	return &UserHandler{
 		userService: userService,
+		translator:  translator,
 	}
 }
 
@@ -39,6 +42,8 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 // @Security     BearerAuth
 // @Router       /v1/users [post]
 func (handler *UserHandler) Create(ctx fiber.Ctx) error {
+	language := extractLanguage(ctx)
+
 	var request requestDTO.CreateUserRequest
 	if bindError := ctx.Bind().Body(&request); bindError != nil {
 		return domain.ErrValidation
@@ -49,7 +54,7 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 	if len(fieldErrors) > 0 {
 		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
-				Message: "validation failed",
+				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
 		})
@@ -88,9 +93,15 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /v1/users/{id} [get]
 func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
+	language := extractLanguage(ctx)
+
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return domain.ErrValidation
+		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+			Error: response.ErrorBody{
+				Message: handler.translator.Translate(language, "validation.invalid_id"),
+			},
+		})
 	}
 
 	user, findByIDError := handler.userService.FindByID(ctx.Context(), id)
@@ -120,6 +131,8 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /v1/users [get]
 func (handler *UserHandler) List(ctx fiber.Ctx) error {
+	language := extractLanguage(ctx)
+
 	request := requestDTO.ListUsersRequest{}
 	if rawPage := ctx.Query("page"); rawPage != "" {
 		page, parseError := strconv.Atoi(rawPage)
@@ -141,7 +154,7 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 	if len(fieldErrors) > 0 {
 		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
-				Message: "validation failed",
+				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
 		})
@@ -175,9 +188,15 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /v1/users/{id} [put]
 func (handler *UserHandler) Update(ctx fiber.Ctx) error {
+	language := extractLanguage(ctx)
+
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return domain.ErrValidation
+		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+			Error: response.ErrorBody{
+				Message: handler.translator.Translate(language, "validation.invalid_id"),
+			},
+		})
 	}
 
 	var request requestDTO.UpdateUserRequest
@@ -190,7 +209,7 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 	if len(fieldErrors) > 0 {
 		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
-				Message: "validation failed",
+				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
 		})
@@ -239,9 +258,15 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 // @Security     BearerAuth
 // @Router       /v1/users/{id} [delete]
 func (handler *UserHandler) Delete(ctx fiber.Ctx) error {
+	language := extractLanguage(ctx)
+
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return domain.ErrValidation
+		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+			Error: response.ErrorBody{
+				Message: handler.translator.Translate(language, "validation.invalid_id"),
+			},
+		})
 	}
 
 	softDeleteError := handler.userService.SoftDelete(ctx.Context(), id)
@@ -253,4 +278,13 @@ func (handler *UserHandler) Delete(ctx fiber.Ctx) error {
 	}
 
 	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func extractLanguage(ctx fiber.Ctx) string {
+	language, isLanguage := ctx.Locals("language").(string)
+	if isLanguage && language != "" {
+		return language
+	}
+
+	return "en"
 }
