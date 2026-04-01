@@ -8,4 +8,5 @@ var (
 	ErrForbidden    = errors.New("forbidden")
 	ErrConflict     = errors.New("conflict")
 	ErrValidation   = errors.New("validation failed")
+	ErrInternal     = errors.New("internal error")
 )
