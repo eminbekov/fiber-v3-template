@@ -1,0 +1,31 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+    - gocritic
+    - cyclop
+    - nestif
+    - funlen
+    - gocognit
+    - prealloc
+    - errorlint
+    - wrapcheck
+    - noctx
+    - gosec
+    - bodyclose
+
+linters-settings:
+  funlen:
+    lines: 80
+  cyclop:
+    max-complexity: 15
+  nestif:
+    min-complexity: 5
