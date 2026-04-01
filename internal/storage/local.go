@@ -83,7 +83,7 @@ func (backend *localFileStorage) Upload(ctx context.Context, key string, reader 
 	if mkdirError := os.MkdirAll(filepath.Dir(fullPath), 0o750); mkdirError != nil {
 		return fmt.Errorf("localFileStorage.Upload: mkdir: %w", mkdirError)
 	}
-	file, createError := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	file, createError := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600) //nolint:gosec // path validated by resolvePath
 	if createError != nil {
 		return fmt.Errorf("localFileStorage.Upload: %w", createError)
 	}
@@ -93,7 +93,7 @@ func (backend *localFileStorage) Upload(ctx context.Context, key string, reader 
 	}
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("localFileStorage.Upload: %w", ctx.Err())
 	default:
 	}
 	return nil
@@ -104,7 +104,7 @@ func (backend *localFileStorage) Open(ctx context.Context, key string) (io.ReadC
 	if resolveError != nil {
 		return nil, "", fmt.Errorf("localFileStorage.Open: %w", resolveError)
 	}
-	file, openError := os.Open(fullPath)
+	file, openError := os.Open(fullPath) //nolint:gosec // path validated by resolvePath
 	if openError != nil {
 		if os.IsNotExist(openError) {
 			return nil, "", fmt.Errorf("localFileStorage.Open: %w", domain.ErrNotFound)
@@ -118,7 +118,7 @@ func (backend *localFileStorage) Open(ctx context.Context, key string) (io.ReadC
 	select {
 	case <-ctx.Done():
 		_ = file.Close()
-		return nil, "", ctx.Err()
+		return nil, "", fmt.Errorf("localFileStorage.Open: %w", ctx.Err())
 	default:
 	}
 	return file, contentType, nil
@@ -135,7 +135,7 @@ func (backend *localFileStorage) URL(key string) string {
 func (backend *localFileStorage) SignedURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return "", fmt.Errorf("localFileStorage.SignedURL: %w", ctx.Err())
 	default:
 	}
 	return PublicSignedFileURL(backend.publicURLPrefix, backend.servePrefix, key, backend.signingKey, expiry)

@@ -200,11 +200,15 @@ func runPostgresContainer(requestContext context.Context) (postgresContainer *tc
 		}
 	}()
 
-	return tcpostgres.Run(
+	container, containerError := tcpostgres.Run(
 		requestContext,
 		"postgres:18.3-alpine",
 		tcpostgres.WithDatabase("fiber_template"),
 		tcpostgres.WithUsername("postgres"),
 		tcpostgres.WithPassword("postgres"),
 	)
+	if containerError != nil {
+		return nil, fmt.Errorf("runPostgresContainer: %w", containerError)
+	}
+	return container, nil
 }

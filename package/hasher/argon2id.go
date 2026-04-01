@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
@@ -88,13 +89,17 @@ func Verify(password string, encodedHash string) (bool, error) {
 		return false, fmt.Errorf("hasher.Verify hash: %w", hashError)
 	}
 
+	expectedHashLength := len(expectedHashBytes)
+	if expectedHashLength <= 0 || expectedHashLength > math.MaxUint32 {
+		return false, fmt.Errorf("hasher.Verify: invalid hash length %d", expectedHashLength)
+	}
 	computedHashBytes := argon2.IDKey(
 		[]byte(password),
 		saltBytes,
 		timeIterations,
 		memoryKiB,
 		threads,
-		uint32(len(expectedHashBytes)),
+		uint32(expectedHashLength), //nolint:gosec // bounds checked above
 	)
 
 	return subtle.ConstantTimeCompare(computedHashBytes, expectedHashBytes) == 1, nil

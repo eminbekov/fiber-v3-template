@@ -54,14 +54,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		ErrorHandler: appHandler.ErrorHandler,
 		Views:        templateEngine,
 	})
-	application.Use(middleware.NewRecover())
-	application.Use(middleware.NewMetrics())
-	application.Use(middleware.NewRequestID())
-	application.Use(middleware.NewRequestLogger())
-	application.Use(middleware.NewHelmet())
-	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
-	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
-	application.Use(middleware.LanguageDetector([]string{"en", "uz", "ru"}, "en"))
+	registerMiddleware(application, applicationConfiguration)
 	apiV1Handler := v1.NewHandler()
 	authHandler := v1.NewAuthHandler(dependencies.AuthService)
 	userHandler := v1.NewUserHandler(dependencies.UserService, dependencies.Translator)
@@ -105,4 +98,15 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Get("/ws", appwebsocket.RequireUpgrade, fiberwebsocket.New(webSocketHandler.HandleConnection))
 
 	return application
+}
+
+func registerMiddleware(application *fiber.App, applicationConfiguration *config.Config) {
+	application.Use(middleware.NewRecover())
+	application.Use(middleware.NewMetrics())
+	application.Use(middleware.NewRequestID())
+	application.Use(middleware.NewRequestLogger())
+	application.Use(middleware.NewHelmet())
+	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
+	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
+	application.Use(middleware.LanguageDetector([]string{"en", "uz", "ru"}, "en"))
 }

@@ -11,15 +11,17 @@ import (
 )
 
 func NewServer(serverOptions ...grpc.ServerOption) *grpc.Server {
-	defaultOptions := []grpc.ServerOption{
+	allOptions := make([]grpc.ServerOption, 0, 2+len(serverOptions))
+	allOptions = append(allOptions,
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			grpcRecovery.UnaryServerInterceptor(),
 			unaryLoggingInterceptor,
 		),
-	}
+	)
+	allOptions = append(allOptions, serverOptions...)
 
-	return grpc.NewServer(append(defaultOptions, serverOptions...)...)
+	return grpc.NewServer(allOptions...)
 }
 
 func unaryLoggingInterceptor(

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -55,7 +56,10 @@ func NewMetrics() fiber.Handler {
 		httpRequestsTotal.WithLabelValues(method, path, status).Inc()
 		httpRequestDurationSeconds.WithLabelValues(method, path).Observe(durationSeconds)
 
-		return nextError
+		if nextError != nil {
+			return fmt.Errorf("metricsMiddleware: %w", nextError)
+		}
+		return nil
 	}
 }
 

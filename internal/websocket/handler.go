@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	fiberwebsocket "github.com/gofiber/contrib/v3/websocket"
@@ -22,7 +23,10 @@ func RequireUpgrade(ctx fiber.Ctx) error {
 	if !fiberwebsocket.IsWebSocketUpgrade(ctx) {
 		return fiber.ErrUpgradeRequired
 	}
-	return ctx.Next()
+	if nextError := ctx.Next(); nextError != nil {
+		return fmt.Errorf("RequireUpgrade: %w", nextError)
+	}
+	return nil
 }
 
 func (handler *Handler) HandleConnection(connection *fiberwebsocket.Conn) {

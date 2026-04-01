@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
@@ -18,13 +19,16 @@ func NewAuthenticate(authService *service.AuthService) fiber.Handler {
 
 		metadata, sessionError := authService.Session(ctx.Context(), sessionToken)
 		if sessionError != nil {
-			return sessionError
+			return fmt.Errorf("authenticate: %w", sessionError)
 		}
 
 		ctx.Locals("user_id", metadata.UserID)
 		ctx.Locals("session_token", sessionToken)
 
-		return ctx.Next()
+		if nextError := ctx.Next(); nextError != nil {
+			return fmt.Errorf("authenticate: %w", nextError)
+		}
+		return nil
 	}
 }
 

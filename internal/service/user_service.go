@@ -150,15 +150,8 @@ func (service *UserService) Create(ctx context.Context, user *domain.User) error
 }
 
 func (service *UserService) Update(ctx context.Context, requesterID uuid.UUID, user *domain.User) error {
-	if requesterID == uuid.Nil || user == nil || user.ID == uuid.Nil {
-		return domain.ErrValidation
-	}
-
-	user.Username = strings.TrimSpace(user.Username)
-	user.FullName = strings.TrimSpace(user.FullName)
-	user.Phone = strings.TrimSpace(user.Phone)
-	if user.Username == "" || user.FullName == "" || user.Phone == "" {
-		return domain.ErrValidation
+	if validationError := validateUpdateInput(requesterID, user); validationError != nil {
+		return validationError
 	}
 
 	currentUser, findByIDError := service.userRepository.FindByID(ctx, user.ID)
@@ -169,16 +162,9 @@ func (service *UserService) Update(ctx context.Context, requesterID uuid.UUID, u
 		user.PasswordHash = currentUser.PasswordHash
 	}
 
-	requesterRoles, requesterRolesError := service.roleRepository.FindByUserID(ctx, requesterID)
-	if requesterRolesError != nil {
-		return fmt.Errorf("UserService.Update requester roles: %w", requesterRolesError)
-	}
-	requesterIsAdmin := false
-	for _, role := range requesterRoles {
-		if role.Name == "admin" {
-			requesterIsAdmin = true
-			break
-		}
+	requesterIsAdmin, adminCheckError := service.isUserAdmin(ctx, requesterID)
+	if adminCheckError != nil {
+		return fmt.Errorf("UserService.Update: %w", adminCheckError)
 	}
 	if !requesterIsAdmin && requesterID != user.ID {
 		return domain.ErrForbidden
@@ -197,15 +183,46 @@ func (service *UserService) Update(ctx context.Context, requesterID uuid.UUID, u
 	if updateError := service.userRepository.Update(ctx, user); updateError != nil {
 		return fmt.Errorf("UserService.Update: %w", updateError)
 	}
-	if service.cache != nil {
-		_ = service.cache.DeleteByPrefix(ctx, "user:list:")
-		_ = service.cache.Delete(ctx, cache.UserByIDKey(user.ID), cache.UserByUsernameKey(user.Username))
-		if currentUser.Username != user.Username {
-			_ = service.cache.Delete(ctx, cache.UserByUsernameKey(currentUser.Username))
-		}
-	}
+	service.invalidateUserCache(ctx, user.ID, user.Username, currentUser.Username)
 
 	return nil
+}
+
+func validateUpdateInput(requesterID uuid.UUID, user *domain.User) error {
+	if requesterID == uuid.Nil || user == nil || user.ID == uuid.Nil {
+		return domain.ErrValidation
+	}
+	user.Username = strings.TrimSpace(user.Username)
+	user.FullName = strings.TrimSpace(user.FullName)
+	user.Phone = strings.TrimSpace(user.Phone)
+	if user.Username == "" || user.FullName == "" || user.Phone == "" {
+		return domain.ErrValidation
+	}
+	return nil
+}
+
+func (service *UserService) isUserAdmin(ctx context.Context, userID uuid.UUID) (bool, error) {
+	roles, rolesError := service.roleRepository.FindByUserID(ctx, userID)
+	if rolesError != nil {
+		return false, fmt.Errorf("isUserAdmin: %w", rolesError)
+	}
+	for _, role := range roles {
+		if role.Name == "admin" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (service *UserService) invalidateUserCache(ctx context.Context, userID uuid.UUID, newUsername string, previousUsername string) {
+	if service.cache == nil {
+		return
+	}
+	_ = service.cache.DeleteByPrefix(ctx, "user:list:")
+	_ = service.cache.Delete(ctx, cache.UserByIDKey(userID), cache.UserByUsernameKey(newUsername))
+	if previousUsername != newUsername {
+		_ = service.cache.Delete(ctx, cache.UserByUsernameKey(previousUsername))
+	}
 }
 
 func (service *UserService) SoftDelete(ctx context.Context, id uuid.UUID) error {
