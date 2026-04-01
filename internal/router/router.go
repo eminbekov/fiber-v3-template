@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
+	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/gofiber/fiber/v3"
 )
@@ -20,6 +21,8 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 	application.Use(middleware.NewHelmet())
 	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
 	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
+	apiV1Handler := v1.NewHandler()
+	apiV1Group := application.Group("/api/v1")
 
 	application.Get("/health/live", func(context fiber.Ctx) error {
 		return context.SendStatus(fiber.StatusOK)
@@ -34,6 +37,7 @@ func New(applicationConfiguration *config.Config) *fiber.App {
 			"name": "fiber-v3-template",
 		})
 	})
+	apiV1Group.Get("/ping", apiV1Handler.Ping)
 
 	return application
 }
