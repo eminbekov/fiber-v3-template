@@ -10,6 +10,7 @@ import (
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
+	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
@@ -27,6 +28,7 @@ type Dependencies struct {
 	AuthService          *service.AuthService
 	AuthorizationService *service.AuthorizationService
 	DashboardHandler     *admin.DashboardHandler
+	Translator           *i18n.Translator
 	Cache                cache.Cache
 	HealthCheckers       []health.Checker
 }
@@ -55,9 +57,10 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	application.Use(middleware.NewHelmet())
 	application.Use(middleware.NewCORS(applicationConfiguration.CORSAllowOrigins))
 	application.Use(middleware.NewBodyLimit(applicationConfiguration.BodyLimit))
+	application.Use(middleware.LanguageDetector([]string{"en", "uz", "ru"}, "en"))
 	apiV1Handler := v1.NewHandler()
 	authHandler := v1.NewAuthHandler(dependencies.AuthService)
-	userHandler := v1.NewUserHandler(dependencies.UserService)
+	userHandler := v1.NewUserHandler(dependencies.UserService, dependencies.Translator)
 	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
