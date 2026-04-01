@@ -14,7 +14,6 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
-	"github.com/eminbekov/fiber-v3-template/internal/storage"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/swagger"
@@ -31,7 +30,7 @@ type Dependencies struct {
 	DashboardHandler     *admin.DashboardHandler
 	Translator           *i18n.Translator
 	Cache                cache.Cache
-	FileStorage          storage.FileStorage
+	FileService          *service.FileService
 	HealthCheckers       []health.Checker
 }
 
@@ -63,6 +62,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	apiV1Handler := v1.NewHandler()
 	authHandler := v1.NewAuthHandler(dependencies.AuthService)
 	userHandler := v1.NewUserHandler(dependencies.UserService, dependencies.Translator)
+	fileHandler := v1.NewFileHandler(dependencies.FileService, dependencies.Translator)
 	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
@@ -87,6 +87,12 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
 	apiV1Group.Post("/auth/login", authHandler.Login)
 	protectedAPIGroup.Post("/auth/logout", authHandler.Logout)
+	application.Get(
+		"/api/files/:filename",
+		middleware.NewSignedURLValidator([]byte(applicationConfiguration.FileSigningKey)),
+		fileHandler.Download,
+	)
+	protectedAPIGroup.Post("/files", middleware.RequirePermission(dependencies.AuthorizationService, "files", "create"), fileHandler.Upload)
 	protectedAPIGroup.Post("/users", middleware.RequirePermission(dependencies.AuthorizationService, "users", "create"), userHandler.Create)
 	protectedAPIGroup.Get("/users", middleware.RequirePermission(dependencies.AuthorizationService, "users", "read"), userHandler.List)
 	protectedAPIGroup.Get("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "read"), userHandler.FindByID)
