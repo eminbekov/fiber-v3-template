@@ -13,6 +13,8 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 ├── cmd/server/          # HTTP server entrypoint (config, logger, graceful shutdown)
 ├── cmd/cron/            # Scheduled job runner entrypoint (separate deployment option)
 ├── cmd/migrate/         # Database migration CLI entrypoint
+├── deploy/docker/       # Dockerfile and compose manifests
+├── .github/workflows/   # CI and deploy automation
 ├── internal/
 │   ├── cron/            # Ticker-based scheduler for periodic jobs
 │   ├── config/          # Typed configuration from environment variables
@@ -69,6 +71,39 @@ Copy [`.env.example`](.env.example) to `.env` for local development and adjust v
 
 ```bash
 go run ./cmd/server
+```
+
+## Docker
+
+Build the app image:
+
+```bash
+make docker-build
+```
+
+Start full stack (app + dependencies):
+
+```bash
+make docker-up
+```
+
+Start development dependencies only (PostgreSQL, Redis, NATS):
+
+```bash
+make docker-dev
+```
+
+Stop containers:
+
+```bash
+make docker-down
+make docker-dev-down
+```
+
+Run migrations inside the app container:
+
+```bash
+make docker-migrate
 ```
 
 Cron worker (separate process):
@@ -133,6 +168,39 @@ go run ./cmd/migrate down 1
 go run ./cmd/migrate version
 go run ./cmd/migrate force 1
 ```
+
+## CI/CD
+
+The repository includes GitHub Actions workflows:
+
+- `.github/workflows/ci.yml` runs lint, tests, swagger generation checks, and Docker build/push on push events.
+- `.github/workflows/deploy.yml` provides manual production deployment via `workflow_dispatch`.
+
+Image tagging behavior:
+
+- Pushes to `main` publish `main-<short-sha>` tags.
+- Version tags like `v1.2.3` publish `1.2.3` and `latest`.
+
+## Deployment Setup (Template Reuse)
+
+`deploy.yml` is a reusable template. Configure these repository secrets before using manual deploy:
+
+- `SERVER_HOST` - target server hostname or IP
+- `SERVER_USER` - SSH username
+- `SSH_PRIVATE_KEY` - private key for SSH auth
+- `APP_DIR` - absolute path to the app directory on the server
+
+Server prerequisites:
+
+- Docker and Docker Compose installed
+- repository deployed on the server with `deploy/docker/docker-compose.yml` available
+
+Manual deploy flow:
+
+1. Open GitHub Actions and select the `Deploy` workflow.
+2. Click `Run workflow`.
+3. Enter `image_tag` (for example `main-a1b2c3d` or `1.2.3`).
+4. Run and monitor deployment logs.
 
 ## Cron / scheduled jobs
 
