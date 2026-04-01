@@ -139,7 +139,12 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 		Phone:    request.Phone,
 		Status:   request.Status,
 	}
-	if updateError := handler.userService.Update(ctx.Context(), user); updateError != nil {
+	requesterIDValue := ctx.Locals("user_id")
+	requesterID, isRequesterID := requesterIDValue.(uuid.UUID)
+	if !isRequesterID {
+		return domain.ErrUnauthorized
+	}
+	if updateError := handler.userService.Update(ctx.Context(), requesterID, user); updateError != nil {
 		return updateError
 	}
 
