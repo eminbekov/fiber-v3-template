@@ -13,3 +13,7 @@ func UserByUsernameKey(username string) string {
 func UserListKey(filterHash string) string {
 	return "user:list:" + filterHash
 }
+
+func PermissionsByUserIDKey(userID uuid.UUID) string {
+	return "permissions:user:" + userID.String()
+}
