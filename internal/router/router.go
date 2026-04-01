@@ -14,7 +14,9 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
+	appwebsocket "github.com/eminbekov/fiber-v3-template/internal/websocket"
 	"github.com/eminbekov/fiber-v3-template/package/health"
+	fiberwebsocket "github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/swagger"
 	"github.com/gofiber/template/html/v2"
@@ -31,6 +33,7 @@ type Dependencies struct {
 	Translator           *i18n.Translator
 	Cache                cache.Cache
 	FileService          *service.FileService
+	WebSocketHub         *appwebsocket.Hub
 	HealthCheckers       []health.Checker
 }
 
@@ -63,6 +66,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	authHandler := v1.NewAuthHandler(dependencies.AuthService)
 	userHandler := v1.NewUserHandler(dependencies.UserService, dependencies.Translator)
 	fileHandler := v1.NewFileHandler(dependencies.FileService, dependencies.Translator)
+	webSocketHandler := appwebsocket.NewHandler(dependencies.WebSocketHub)
 	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
@@ -98,6 +102,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	protectedAPIGroup.Get("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "read"), userHandler.FindByID)
 	protectedAPIGroup.Put("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "update"), userHandler.Update)
 	protectedAPIGroup.Delete("/users/:id", middleware.RequirePermission(dependencies.AuthorizationService, "users", "delete"), userHandler.Delete)
+	application.Get("/ws", appwebsocket.RequireUpgrade, fiberwebsocket.New(webSocketHandler.HandleConnection))
 
 	return application
 }
