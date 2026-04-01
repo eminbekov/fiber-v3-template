@@ -10,22 +10,22 @@ import (
 var dtoValidator = validator.New()
 
 type CreateUserRequest struct {
-	Username string `json:"username" validate:"required,min=3,max=50,alphanum"`
-	Password string `json:"password" validate:"required,min=8"`
-	FullName string `json:"full_name" validate:"required,max=100"`
-	Phone    string `json:"phone" validate:"required,e164"`
+	Username string `json:"username" validate:"required,min=3,max=50,alphanum" example:"john_doe"`
+	Password string `json:"password" validate:"required,min=8" example:"StrongPass123!"`
+	FullName string `json:"full_name" validate:"required,max=100" example:"John Doe"`
+	Phone    string `json:"phone" validate:"required,e164" example:"+998901234567"`
 }
 
 type UpdateUserRequest struct {
-	Username string `json:"username" validate:"required,min=3,max=50,alphanum"`
-	FullName string `json:"full_name" validate:"required,max=100"`
-	Phone    string `json:"phone" validate:"required,e164"`
-	Status   string `json:"status" validate:"required,oneof=active disabled"`
+	Username string `json:"username" validate:"required,min=3,max=50,alphanum" example:"john_doe"`
+	FullName string `json:"full_name" validate:"required,max=100" example:"John Doe"`
+	Phone    string `json:"phone" validate:"required,e164" example:"+998901234567"`
+	Status   string `json:"status" validate:"required,oneof=active disabled" example:"active"`
 }
 
 type ListUsersRequest struct {
-	Page     int `query:"page" validate:"omitempty,min=1"`
-	PageSize int `query:"page_size" validate:"omitempty,min=1,max=100"`
+	Page     int `query:"page" validate:"omitempty,min=1" example:"1"`
+	PageSize int `query:"page_size" validate:"omitempty,min=1,max=100" example:"20"`
 }
 
 func (request *CreateUserRequest) Normalize() {
