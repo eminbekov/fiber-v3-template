@@ -1,6 +1,7 @@
 APP_NAME := server
 BUILD_DIR := bin
 SERVER_MAIN_PATH := cmd/server/main.go
+CRON_MAIN_PATH := cmd/cron/main.go
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
 
 .PHONY: build
@@ -10,6 +11,14 @@ build: ## Build the HTTP server binary
 .PHONY: run
 run: ## Run the HTTP server
 	go run $(SERVER_MAIN_PATH)
+
+.PHONY: build-cron
+build-cron: ## Build the cron binary
+	CGO_ENABLED=0 go build -o $(BUILD_DIR)/cron $(CRON_MAIN_PATH)
+
+.PHONY: run-cron
+run-cron: ## Run the cron binary
+	go run $(CRON_MAIN_PATH)
 
 .PHONY: tidy
 tidy: ## Tidy go module files
