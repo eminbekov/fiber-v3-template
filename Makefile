@@ -39,6 +39,12 @@ swagger: ## Generate Swagger docs from handler annotations
 swagger-fmt: ## Format Swagger annotations
 	swag fmt
 
+.PHONY: proto
+proto: ## Generate Go code from protobuf definitions
+	protoc --go_out=gen --go_opt=paths=source_relative \
+	       --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
+	       proto/**/**/*.proto
+
 .PHONY: help
 help: ## Show available make targets
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z_-]+:.*## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
