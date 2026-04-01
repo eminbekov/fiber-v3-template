@@ -28,7 +28,7 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
-// @Param        body  body      request.LoginRequest  true  "Login credentials"
+// @Param        body  body      requestDTO.LoginRequest  true  "Login credentials"
 // @Success      200   {object}  response.Response
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
