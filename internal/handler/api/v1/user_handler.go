@@ -23,6 +23,21 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 	}
 }
 
+// Create registers a new user.
+//
+// @Summary      Create user
+// @Description  Creates a new user and returns the created user payload.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        body  body      request.CreateUserRequest  true  "Create user request"
+// @Success      201   {object}  response.Response
+// @Failure      400   {object}  response.ErrorResponse  "Validation error"
+// @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      403   {object}  response.ErrorResponse  "Forbidden"
+// @Failure      500   {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/users [post]
 func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 	var request requestDTO.CreateUserRequest
 	if bindError := ctx.Bind().Body(&request); bindError != nil {
@@ -56,6 +71,22 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 	})
 }
 
+// FindByID returns a user by ID.
+//
+// @Summary      Get user by ID
+// @Description  Returns one user by UUID identifier.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "User ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.ErrorResponse  "Invalid ID"
+// @Failure      401  {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      403  {object}  response.ErrorResponse  "Forbidden"
+// @Failure      404  {object}  response.ErrorResponse  "User not found"
+// @Failure      500  {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/users/{id} [get]
 func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
@@ -72,6 +103,22 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 	})
 }
 
+// List returns a paginated list of users.
+//
+// @Summary      List users
+// @Description  Returns users with page and page_size query parameters.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int  false  "Page number"      default(1)
+// @Param        page_size  query     int  false  "Items per page"   default(20)
+// @Success      200        {object}  response.Response
+// @Failure      400        {object}  response.ErrorResponse  "Validation error"
+// @Failure      401        {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      403        {object}  response.ErrorResponse  "Forbidden"
+// @Failure      500        {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/users [get]
 func (handler *UserHandler) List(ctx fiber.Ctx) error {
 	request := requestDTO.ListUsersRequest{}
 	if rawPage := ctx.Query("page"); rawPage != "" {
@@ -110,6 +157,23 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 	})
 }
 
+// Update updates an existing user by ID.
+//
+// @Summary      Update user
+// @Description  Updates user fields and returns the updated user payload.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                    true  "User ID"
+// @Param        body  body      request.UpdateUserRequest true  "Update user request"
+// @Success      200   {object}  response.Response
+// @Failure      400   {object}  response.ErrorResponse  "Validation error"
+// @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      403   {object}  response.ErrorResponse  "Forbidden"
+// @Failure      404   {object}  response.ErrorResponse  "User not found"
+// @Failure      500   {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/users/{id} [put]
 func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
@@ -158,6 +222,22 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 	})
 }
 
+// Delete soft-deletes a user by ID.
+//
+// @Summary      Delete user
+// @Description  Soft-deletes a user and returns no content on success.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "User ID"
+// @Success      204  {string}  string  "No Content"
+// @Failure      400  {object}  response.ErrorResponse  "Invalid ID"
+// @Failure      401  {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      403  {object}  response.ErrorResponse  "Forbidden"
+// @Failure      404  {object}  response.ErrorResponse  "User not found"
+// @Failure      500  {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/users/{id} [delete]
 func (handler *UserHandler) Delete(ctx fiber.Ctx) error {
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
