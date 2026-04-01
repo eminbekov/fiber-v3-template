@@ -188,6 +188,52 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ---
 
+## Phase 20 — Monitoring, tracing, and log aggregation infrastructure
+
+Full observability stack per guide §19.2–§19.3 and §20.2 (see `README.md` Docker / Observability).
+
+### Database query logging (guide §19.2)
+
+- [x] pgx query tracer: DEBUG / WARN (>100 ms) / ERROR (`internal/database/tracer.go`); wired in `database.NewPool` via `ConnConfig.Tracer`.
+
+### Prometheus (guide §19.3)
+
+- [x] `monitoring/prometheus/prometheus.yml` — scrape `app:8080/metrics`.
+- [x] `monitoring/prometheus/alerts.yml` — high error rate, high latency (p95), target down.
+
+### Loki + Promtail (guide §19.3)
+
+- [x] `monitoring/loki/loki-config.yml` — single-process Loki with retention.
+- [x] `monitoring/promtail/promtail-config.yml` — Docker service discovery → Loki.
+
+### OTEL Collector + Tempo (guide §19.3)
+
+- [x] `monitoring/otel-collector/otel-collector-config.yml` — OTLP in, export traces to Tempo.
+- [x] `monitoring/tempo/tempo-config.yml` — local trace storage (Compose uses container filesystem for dev).
+
+### Grafana (guide §19.3)
+
+- [x] `monitoring/grafana/provisioning/datasources/datasources.yml` — Prometheus, Loki, Tempo.
+- [x] `monitoring/grafana/provisioning/dashboards/dashboards.yml` — file provisioning.
+- [x] `monitoring/grafana/dashboards/app-overview.json` — HTTP rate, latency, in-flight requests.
+- [ ] Optional: dedicated Loki logs dashboard JSON; Grafana alert contact points.
+
+### Docker Compose + app image (guide §20.2)
+
+- [x] `deploy/docker/docker-compose.yml` — `build` from repo root, app env inline, Postgres/Redis/NATS + observability services; Promtail mounts Docker socket.
+- [x] `deploy/docker/entrypoint.sh` — `./migrate up` then `./server` (fresh DB gets migrations automatically).
+
+### Makefile
+
+- [x] `make up` / `make down` / `make logs`; `make monitoring-up` / `make monitoring-down`.
+- [x] `.env.example` — documents `OTEL_EXPORTER_ENDPOINT` for Compose (`otel-collector:4317`).
+
+### Documentation
+
+- [x] `README.md` — ports, credentials, data-flow summary.
+
+---
+
 ### How to use this file
 
 1. Pick the next unchecked item in the earliest incomplete phase.
@@ -211,6 +257,7 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 | §13–§14  | DB, Redis cache                            |
 | §15–§18  | CDN, NATS, gRPC, microservices             |
 | §19–§23  | Observability, Docker, CI/CD, Git, testing |
+| §19.2–3  | Monitoring stack: Prometheus, Grafana, Loki, Promtail, OTEL Collector |
 | §24–§26  | NASA rules, dependencies, Envoy WAF        |
 | §27–§30  | Entrypoint, Makefile, console CLI, cron    |
 
