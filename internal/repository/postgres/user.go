@@ -25,7 +25,7 @@ func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
 }
 
 func (repository *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-	const query = `SELECT id, username, full_name, phone, status, created_at, updated_at, deleted_at
+	const query = `SELECT id, username, password_hash, full_name, phone, status, created_at, updated_at, deleted_at
 FROM users
 WHERE id = $1 AND deleted_at IS NULL`
 
@@ -47,7 +47,7 @@ WHERE id = $1 AND deleted_at IS NULL`
 }
 
 func (repository *userRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
-	const query = `SELECT id, username, full_name, phone, status, created_at, updated_at, deleted_at
+	const query = `SELECT id, username, password_hash, full_name, phone, status, created_at, updated_at, deleted_at
 FROM users
 WHERE username = $1 AND deleted_at IS NULL`
 
@@ -69,7 +69,7 @@ WHERE username = $1 AND deleted_at IS NULL`
 }
 
 func (repository *userRepository) List(ctx context.Context, page int, pageSize int) ([]domain.User, int64, error) {
-	const listQuery = `SELECT id, username, full_name, phone, status, created_at, updated_at, deleted_at
+	const listQuery = `SELECT id, username, password_hash, full_name, phone, status, created_at, updated_at, deleted_at
 FROM users
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
@@ -97,8 +97,8 @@ LIMIT $1 OFFSET $2`
 }
 
 func (repository *userRepository) Create(ctx context.Context, user *domain.User) error {
-	const query = `INSERT INTO users (id, username, full_name, phone, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	const query = `INSERT INTO users (id, username, password_hash, full_name, phone, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	now := time.Now().UTC()
 	if user.ID == uuid.Nil {
@@ -119,6 +119,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)`
 		query,
 		user.ID,
 		user.Username,
+		user.PasswordHash,
 		user.FullName,
 		user.Phone,
 		user.Status,
@@ -134,7 +135,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 func (repository *userRepository) Update(ctx context.Context, user *domain.User) error {
 	const query = `UPDATE users
-SET username = $2, full_name = $3, phone = $4, status = $5, updated_at = $6
+SET username = $2, password_hash = $3, full_name = $4, phone = $5, status = $6, updated_at = $7
 WHERE id = $1 AND deleted_at IS NULL`
 
 	user.UpdatedAt = time.Now().UTC()
@@ -143,6 +144,7 @@ WHERE id = $1 AND deleted_at IS NULL`
 		query,
 		user.ID,
 		user.Username,
+		user.PasswordHash,
 		user.FullName,
 		user.Phone,
 		user.Status,

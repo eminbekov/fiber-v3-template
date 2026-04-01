@@ -13,14 +13,15 @@ const (
 
 // User is a pure domain model without framework dependencies.
 type User struct {
-	ID        uuid.UUID  `db:"id"`
-	Username  string     `db:"username"`
-	FullName  string     `db:"full_name"`
-	Phone     string     `db:"phone"`
-	Status    string     `db:"status"`
-	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at"`
-	DeletedAt *time.Time `db:"deleted_at"`
+	ID           uuid.UUID  `db:"id"`
+	Username     string     `db:"username"`
+	PasswordHash string     `db:"password_hash"`
+	FullName     string     `db:"full_name"`
+	Phone        string     `db:"phone"`
+	Status       string     `db:"status"`
+	CreatedAt    time.Time  `db:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at"`
+	DeletedAt    *time.Time `db:"deleted_at"`
 }
 
 // IsActive reports whether user can be treated as active.
