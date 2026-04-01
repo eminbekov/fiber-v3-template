@@ -32,7 +32,10 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
 	"github.com/gofiber/fiber/v3"
+	"github.com/jackc/pgx/v5/pgxpool"
 	natsgo "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
@@ -105,6 +108,45 @@ func run(parentContext context.Context) error {
 	}
 	defer natsConnection.Close()
 
+	wiring, wiringError := wireApplication(parentContext, applicationConfiguration, databasePool, redisClient, natsConnection, jetStream, fileStorage)
+	if wiringError != nil {
+		return wiringError
+	}
+	defer func() {
+		if closeError := wiring.grpcListener.Close(); closeError != nil {
+			slog.Error("grpc listener close", "error", closeError)
+		}
+	}()
+
+	group, groupContext := errgroup.WithContext(parentContext)
+	registerWorkers(group, groupContext, applicationConfiguration, wiring.application, wiring.grpcServer, wiring.grpcListener, wiring.scheduler, wiring.notificationConsumer, wiring.auditLogConsumer, wiring.webSocketHub)
+
+	if waitError := group.Wait(); waitError != nil && !errors.Is(waitError, context.Canceled) {
+		return fmt.Errorf("run: %w", waitError)
+	}
+
+	return nil
+}
+
+type applicationWiring struct {
+	application          *fiber.App
+	grpcServer           *grpc.Server
+	grpcListener         net.Listener
+	scheduler            *cron.Scheduler
+	notificationConsumer *consumers.NotificationConsumer
+	auditLogConsumer     *consumers.AuditLogConsumer
+	webSocketHub         *appwebsocket.Hub
+}
+
+func wireApplication(
+	parentContext context.Context,
+	applicationConfiguration *config.Config,
+	databasePool *pgxpool.Pool,
+	redisClient *redis.Client,
+	natsConnection *natsgo.Conn,
+	jetStream jetstream.JetStream,
+	fileStorage storage.FileStorage,
+) (*applicationWiring, error) {
 	notificationConsumer := consumers.NewNotificationConsumer(jetStream)
 	auditLogConsumer := consumers.NewAuditLogConsumer(jetStream)
 
@@ -137,7 +179,7 @@ func run(parentContext context.Context) error {
 
 	translator, translatorError := i18n.NewTranslator("en")
 	if translatorError != nil {
-		return fmt.Errorf("translator: %w", translatorError)
+		return nil, fmt.Errorf("translator: %w", translatorError)
 	}
 	dashboardHandler := admin.NewDashboardHandler(translator)
 	userGRPCServer := internalgrpc.NewUserServer(userService)
@@ -146,43 +188,25 @@ func run(parentContext context.Context) error {
 
 	grpcListener, grpcListenError := (&net.ListenConfig{}).Listen(parentContext, "tcp", applicationConfiguration.GRPCListenAddress)
 	if grpcListenError != nil {
-		return fmt.Errorf("grpc listen: %w", grpcListenError)
+		return nil, fmt.Errorf("grpc listen: %w", grpcListenError)
 	}
-	defer func() {
-		if closeError := grpcListener.Close(); closeError != nil {
-			slog.Error("grpc listener close", "error", closeError)
-		}
-	}()
 
-	application := router.New(applicationConfiguration, router.Dependencies{
-		UserRepository:       userRepository,
-		RoleRepository:       roleRepository,
-		PermissionRepository: permissionRepository,
-		UserService:          userService,
-		AuthService:          authService,
-		AuthorizationService: authorizationService,
-		DashboardHandler:     dashboardHandler,
-		Translator:           translator,
-		Cache:                applicationCache,
-		FileService:          fileService,
-		WebSocketHub:         webSocketHub,
+	routerDependencies := router.Dependencies{
+		UserRepository: userRepository, RoleRepository: roleRepository, PermissionRepository: permissionRepository,
+		UserService: userService, AuthService: authService, AuthorizationService: authorizationService,
+		DashboardHandler: dashboardHandler, Translator: translator, Cache: applicationCache,
+		FileService: fileService, WebSocketHub: webSocketHub,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
-			health.NewRedisChecker("redis", func(ctx context.Context) error {
-				return redisClient.Ping(ctx).Err()
-			}),
+			health.NewRedisChecker("redis", func(ctx context.Context) error { return redisClient.Ping(ctx).Err() }),
 			health.NewNATSChecker("nats", natsHealthCheck(natsConnection)),
 		},
-	})
-
-	group, groupContext := errgroup.WithContext(parentContext)
-	registerWorkers(group, groupContext, applicationConfiguration, application, grpcServer, grpcListener, scheduler, notificationConsumer, auditLogConsumer, webSocketHub)
-
-	if waitError := group.Wait(); waitError != nil && !errors.Is(waitError, context.Canceled) {
-		return fmt.Errorf("run: %w", waitError)
 	}
-
-	return nil
+	return &applicationWiring{
+		application: router.New(applicationConfiguration, routerDependencies), grpcServer: grpcServer,
+		grpcListener: grpcListener, scheduler: scheduler, notificationConsumer: notificationConsumer,
+		auditLogConsumer: auditLogConsumer, webSocketHub: webSocketHub,
+	}, nil
 }
 
 func natsHealthCheck(natsConnection *natsgo.Conn) func(context.Context) error {

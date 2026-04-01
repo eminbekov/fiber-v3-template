@@ -52,12 +52,15 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 
 	fieldErrors := requestDTO.ValidateDTO(request)
 	if len(fieldErrors) > 0 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.Create: %w", jsonError)
+		}
+		return nil
 	}
 
 	user := &domain.User{
@@ -71,9 +74,12 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 		return fmt.Errorf("userHandler.Create: %w", createError)
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(response.Response{
+	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response{
 		Data: responseV1.NewUserResponse(*user),
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("userHandler.Create: %w", jsonError)
+	}
+	return nil
 }
 
 // FindByID returns a user by ID.
@@ -97,11 +103,14 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "validation.invalid_id"),
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.FindByID: %w", jsonError)
+		}
+		return nil
 	}
 
 	user, findByIDError := handler.userService.FindByID(ctx.Context(), id)
@@ -155,12 +164,15 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 
 	fieldErrors := requestDTO.ValidateDTO(request)
 	if len(fieldErrors) > 0 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.List: %w", jsonError)
+		}
+		return nil
 	}
 
 	users, totalCount, listError := handler.userService.List(ctx.Context(), request.Page, request.PageSize)
@@ -198,11 +210,14 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "validation.invalid_id"),
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.Update: %w", jsonError)
+		}
+		return nil
 	}
 
 	var request requestDTO.UpdateUserRequest
@@ -213,12 +228,15 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 
 	fieldErrors := requestDTO.ValidateDTO(request)
 	if len(fieldErrors) > 0 {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "general.validation_failed"),
 				Details: fieldErrors,
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.Update: %w", jsonError)
+		}
+		return nil
 	}
 
 	user := &domain.User{
@@ -271,11 +289,14 @@ func (handler *UserHandler) Delete(ctx fiber.Ctx) error {
 
 	id, idError := uuid.FromString(ctx.Params("id"))
 	if idError != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
+		if jsonError := ctx.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse{
 			Error: response.ErrorBody{
 				Message: handler.translator.Translate(language, "validation.invalid_id"),
 			},
-		})
+		}); jsonError != nil {
+			return fmt.Errorf("userHandler.Delete: %w", jsonError)
+		}
+		return nil
 	}
 
 	if softDeleteError := handler.userService.SoftDelete(ctx.Context(), id); softDeleteError != nil {

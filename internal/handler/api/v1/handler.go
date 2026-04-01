@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"fmt"
+
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	"github.com/gofiber/fiber/v3"
 )
@@ -26,10 +28,13 @@ func NewHandler() *Handler {
 // @Success      200  {object}  response.Response
 // @Router       /v1/ping [get]
 func (handler *Handler) Ping(ctx fiber.Ctx) error {
-	return ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response{
 		Data: PingResponse{
 			Name:    "fiber-v3-template",
 			Version: "v1",
 		},
-	})
+	}); jsonError != nil {
+		return fmt.Errorf("handler.Ping: %w", jsonError)
+	}
+	return nil
 }
