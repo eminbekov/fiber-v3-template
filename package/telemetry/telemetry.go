@@ -77,7 +77,7 @@ func Setup(ctx context.Context, endpoint string) (func(context.Context) error, e
 		tracerShutdownError := tracerProvider.Shutdown(shutdownContext)
 		meterShutdownError := meterProvider.Shutdown(shutdownContext)
 		if tracerShutdownError != nil && meterShutdownError != nil {
-			return fmt.Errorf("shutdown tracer provider: %w; shutdown meter provider: %v", tracerShutdownError, meterShutdownError)
+			return fmt.Errorf("shutdown tracer provider: %w; shutdown meter provider: %w", tracerShutdownError, meterShutdownError)
 		}
 		if tracerShutdownError != nil {
 			return fmt.Errorf("shutdown tracer provider: %w", tracerShutdownError)

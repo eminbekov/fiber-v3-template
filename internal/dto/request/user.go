@@ -1,6 +1,7 @@
 package request
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
@@ -57,8 +58,8 @@ func ValidateDTO(target any) []response.FieldError {
 		return nil
 	}
 
-	validationErrors, ok := validationError.(validator.ValidationErrors)
-	if !ok {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(validationError, &validationErrors) {
 		return []response.FieldError{
 			{
 				Field:   "request",

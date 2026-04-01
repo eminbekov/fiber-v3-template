@@ -18,12 +18,13 @@ import (
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	if runError := run(ctx); runError != nil {
 		slog.Error("cron exited with error", "error", runError)
+		stop()
 		os.Exit(1)
 	}
+	stop()
 }
 
 func run(parentContext context.Context) error {
