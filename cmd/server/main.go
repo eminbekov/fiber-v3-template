@@ -10,7 +10,10 @@ import (
 	"time"
 
 	"github.com/eminbekov/fiber-v3-template/internal/config"
+	"github.com/eminbekov/fiber-v3-template/internal/database"
+	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
+	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
 )
@@ -43,7 +46,20 @@ func run(parentContext context.Context) error {
 		}
 	}()
 
-	application := router.New(applicationConfiguration)
+	databasePool, databasePoolError := database.NewPool(parentContext, applicationConfiguration.DatabaseURL)
+	if databasePoolError != nil {
+		return fmt.Errorf("database pool: %w", databasePoolError)
+	}
+	defer databasePool.Close()
+
+	userRepository := postgres.NewUserRepository(databasePool)
+
+	application := router.New(applicationConfiguration, router.Dependencies{
+		UserRepository: userRepository,
+		HealthCheckers: []health.Checker{
+			health.NewDatabaseChecker("postgres", databasePool.Ping),
+		},
+	})
 
 	go func() {
 		<-parentContext.Done()
