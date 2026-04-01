@@ -2,6 +2,7 @@ package router
 
 import (
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
+	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -11,6 +12,9 @@ func New() *fiber.App {
 		AppName:      "fiber-v3-template",
 		ErrorHandler: appHandler.ErrorHandler,
 	})
+	application.Use(middleware.NewRecover())
+	application.Use(middleware.NewRequestID())
+	application.Use(middleware.NewRequestLogger())
 
 	application.Get("/health/live", func(context fiber.Ctx) error {
 		return context.SendStatus(fiber.StatusOK)
