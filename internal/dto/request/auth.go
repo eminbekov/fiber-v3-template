@@ -3,8 +3,8 @@ package request
 import "strings"
 
 type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Username string `json:"username" validate:"required" example:"john_doe"`
+	Password string `json:"password" validate:"required" example:"StrongPass123!"`
 }
 
 func (request *LoginRequest) Normalize() {
