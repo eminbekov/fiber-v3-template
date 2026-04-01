@@ -16,6 +16,15 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
+// Ping returns service identity and API version.
+//
+// @Summary      Ping API
+// @Description  Returns a simple payload to verify API availability.
+// @Tags         Health
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  response.Response
+// @Router       /v1/ping [get]
 func (handler *Handler) Ping(ctx fiber.Ctx) error {
 	return ctx.JSON(response.Response{
 		Data: PingResponse{

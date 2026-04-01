@@ -21,6 +21,19 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	}
 }
 
+// Login authenticates user credentials and returns a session token.
+//
+// @Summary      Login
+// @Description  Authenticates with username and password and returns a session token.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      request.LoginRequest  true  "Login credentials"
+// @Success      200   {object}  response.Response
+// @Failure      400   {object}  response.ErrorResponse  "Validation error"
+// @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      500   {object}  response.ErrorResponse  "Internal server error"
+// @Router       /v1/auth/login [post]
 func (handler *AuthHandler) Login(ctx fiber.Ctx) error {
 	var request requestDTO.LoginRequest
 	if bindError := ctx.Bind().Body(&request); bindError != nil {
@@ -58,6 +71,18 @@ func (handler *AuthHandler) Login(ctx fiber.Ctx) error {
 	})
 }
 
+// Logout invalidates the active session token.
+//
+// @Summary      Logout
+// @Description  Invalidates the current authenticated session.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Success      204  {string}  string  "No Content"
+// @Failure      401  {object}  response.ErrorResponse  "Unauthorized"
+// @Failure      500  {object}  response.ErrorResponse  "Internal server error"
+// @Security     BearerAuth
+// @Router       /v1/auth/logout [post]
 func (handler *AuthHandler) Logout(ctx fiber.Ctx) error {
 	sessionToken, isSessionToken := ctx.Locals("session_token").(string)
 	if !isSessionToken || sessionToken == "" {

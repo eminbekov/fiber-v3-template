@@ -22,6 +22,18 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
 )
 
+// @title           Fiber v3 Template API
+// @version         1.0.0
+// @description     REST API for authentication, authorization, and user management.
+// @contact.name    API Support
+// @contact.email   support@example.com
+// @host            localhost:8080
+// @BasePath        /api
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                Enter Bearer token as: Bearer <token>
+// @schemes        http https
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
