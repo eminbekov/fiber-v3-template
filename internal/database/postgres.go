@@ -30,6 +30,7 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	poolConfiguration.MaxConnIdleTime = defaultMaxConnectionIdleTime
 	poolConfiguration.MaxConnLifetimeJitter = defaultConnectionLifetimeJitter
 	poolConfiguration.HealthCheckPeriod = defaultHealthCheckPeriod
+	poolConfiguration.ConnConfig.Tracer = &queryTracer{slowThreshold: 100 * time.Millisecond}
 
 	pool, newPoolError := pgxpool.NewWithConfig(ctx, poolConfiguration)
 	if newPoolError != nil {
