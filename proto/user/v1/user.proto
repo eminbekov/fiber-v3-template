@@ -59,6 +59,7 @@ message UpdateUserRequest {
   string username = 3;
   string full_name = 4;
   string phone = 5;
+  string status = 6;
 }
 
 message UpdateUserResponse {

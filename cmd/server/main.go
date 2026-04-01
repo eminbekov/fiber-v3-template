@@ -2,16 +2,20 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	userv1 "github.com/eminbekov/fiber-v3-template/gen/proto/user/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/database"
+	internalgrpc "github.com/eminbekov/fiber-v3-template/internal/grpc"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	appnats "github.com/eminbekov/fiber-v3-template/internal/nats"
@@ -25,6 +29,8 @@ import (
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
 	natsgo "github.com/nats-io/nats.go"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 )
 
 // @title           Fiber v3 Template API
@@ -91,16 +97,6 @@ func run(parentContext context.Context) error {
 
 	notificationConsumer := consumers.NewNotificationConsumer(jetStream)
 	auditLogConsumer := consumers.NewAuditLogConsumer(jetStream)
-	go func() {
-		if runError := notificationConsumer.Run(parentContext); runError != nil {
-			slog.Error("notification consumer failed", "error", runError)
-		}
-	}()
-	go func() {
-		if runError := auditLogConsumer.Run(parentContext); runError != nil {
-			slog.Error("audit consumer failed", "error", runError)
-		}
-	}()
 
 	userRepository := postgres.NewUserRepository(databasePool)
 	roleRepository := postgres.NewRoleRepository(databasePool)
@@ -121,6 +117,15 @@ func run(parentContext context.Context) error {
 		return fmt.Errorf("translator: %w", translatorError)
 	}
 	dashboardHandler := admin.NewDashboardHandler(translator)
+	userGRPCServer := internalgrpc.NewUserServer(userService)
+	grpcServer := internalgrpc.NewServer()
+	userv1.RegisterUserServiceServer(grpcServer, userGRPCServer)
+
+	grpcListener, grpcListenError := net.Listen("tcp", applicationConfiguration.GRPCListenAddress)
+	if grpcListenError != nil {
+		return fmt.Errorf("grpc listen: %w", grpcListenError)
+	}
+	defer grpcListener.Close()
 
 	application := router.New(applicationConfiguration, router.Dependencies{
 		UserRepository:       userRepository,
@@ -146,19 +151,55 @@ func run(parentContext context.Context) error {
 		},
 	})
 
-	go func() {
-		<-parentContext.Done()
-		slog.Info("shutting down HTTP server")
+	group, groupContext := errgroup.WithContext(parentContext)
+
+	group.Go(func() error {
+		slog.Info("http server starting", "address", applicationConfiguration.HTTPListenAddress)
+		listenError := application.Listen(applicationConfiguration.HTTPListenAddress)
+		if listenError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
+			return fmt.Errorf("http listen: %w", listenError)
+		}
+		return nil
+	})
+
+	group.Go(func() error {
+		slog.Info("grpc server starting", "address", applicationConfiguration.GRPCListenAddress)
+		serveError := grpcServer.Serve(grpcListener)
+		if serveError != nil && !errors.Is(serveError, grpc.ErrServerStopped) && !errors.Is(groupContext.Err(), context.Canceled) {
+			return fmt.Errorf("grpc serve: %w", serveError)
+		}
+		return nil
+	})
+
+	group.Go(func() error {
+		if runError := notificationConsumer.Run(groupContext); runError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
+			return fmt.Errorf("notification consumer run: %w", runError)
+		}
+		return nil
+	})
+
+	group.Go(func() error {
+		if runError := auditLogConsumer.Run(groupContext); runError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
+			return fmt.Errorf("audit consumer run: %w", runError)
+		}
+		return nil
+	})
+
+	group.Go(func() error {
+		<-groupContext.Done()
+		slog.Info("shutting down http and grpc servers")
+
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		if shutdownErr := application.ShutdownWithContext(shutdownContext); shutdownErr != nil {
-			slog.Error("HTTP server shutdown", "error", shutdownErr)
+		if shutdownError := application.ShutdownWithContext(shutdownContext); shutdownError != nil {
+			slog.Error("http server shutdown", "error", shutdownError)
 		}
-	}()
+		grpcServer.GracefulStop()
+		return nil
+	})
 
-	slog.Info("HTTP server starting", "address", applicationConfiguration.HTTPListenAddress)
-	if listenErr := application.Listen(applicationConfiguration.HTTPListenAddress); listenErr != nil {
-		return fmt.Errorf("listen: %w", listenErr)
+	if waitError := group.Wait(); waitError != nil && !errors.Is(waitError, context.Canceled) {
+		return waitError
 	}
 
 	return nil
