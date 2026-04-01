@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
+	"github.com/eminbekov/fiber-v3-template/package/logger"
 )
 
 func main() {
@@ -23,6 +25,13 @@ func main() {
 }
 
 func run(parentContext context.Context) error {
+	applicationConfiguration, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("config: %w", err)
+	}
+
+	logger.Setup(applicationConfiguration.LogLevel, applicationConfiguration.Environment)
+
 	application := router.New()
 
 	go func() {
@@ -35,13 +44,8 @@ func run(parentContext context.Context) error {
 		}
 	}()
 
-	listenAddress := os.Getenv("HTTP_LISTEN_ADDRESS")
-	if listenAddress == "" {
-		listenAddress = ":8080"
-	}
-
-	slog.Info("HTTP server starting", "address", listenAddress)
-	if listenErr := application.Listen(listenAddress); listenErr != nil {
+	slog.Info("HTTP server starting", "address", applicationConfiguration.HTTPListenAddress)
+	if listenErr := application.Listen(applicationConfiguration.HTTPListenAddress); listenErr != nil {
 		return fmt.Errorf("listen: %w", listenErr)
 	}
 
