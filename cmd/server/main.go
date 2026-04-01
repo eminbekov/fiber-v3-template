@@ -25,6 +25,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/eminbekov/fiber-v3-template/internal/session"
 	"github.com/eminbekov/fiber-v3-template/internal/storage"
+	appwebsocket "github.com/eminbekov/fiber-v3-template/internal/websocket"
 	"github.com/eminbekov/fiber-v3-template/package/hasher"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
@@ -108,6 +109,7 @@ func run(parentContext context.Context) error {
 	roleRepository := postgres.NewRoleRepository(databasePool)
 	permissionRepository := postgres.NewPermissionRepository(databasePool)
 	applicationCache := cache.NewRedisCache(redisClient)
+	webSocketHub := appwebsocket.NewHub(redisClient)
 	passwordHasher := hasher.NewArgon2ID()
 	sessionStore := session.NewRedisStore(redisClient, applicationConfiguration.SessionDuration)
 	fileService := service.NewFileService(fileStorage, applicationConfiguration.SignedURLTTL)
@@ -145,6 +147,7 @@ func run(parentContext context.Context) error {
 		Translator:           translator,
 		Cache:                applicationCache,
 		FileService:          fileService,
+		WebSocketHub:         webSocketHub,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
@@ -189,6 +192,13 @@ func run(parentContext context.Context) error {
 	group.Go(func() error {
 		if runError := auditLogConsumer.Run(groupContext); runError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
 			return fmt.Errorf("audit consumer run: %w", runError)
+		}
+		return nil
+	})
+
+	group.Go(func() error {
+		if subscribeError := webSocketHub.Subscribe(groupContext, appwebsocket.DefaultChannel); subscribeError != nil && !errors.Is(groupContext.Err(), context.Canceled) {
+			return fmt.Errorf("websocket subscribe run: %w", subscribeError)
 		}
 		return nil
 	})
