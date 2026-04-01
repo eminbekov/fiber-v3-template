@@ -15,6 +15,7 @@ const (
 	CORSAllowOriginsVariableName  = "CORS_ALLOW_ORIGINS"
 	BodyLimitVariableName         = "BODY_LIMIT"
 	OTELExporterEndpointVarName   = "OTEL_EXPORTER_ENDPOINT"
+	DatabaseURLVariableName       = "DATABASE_URL"
 )
 
 const (
@@ -32,6 +33,7 @@ type Config struct {
 	CORSAllowOrigins     string
 	BodyLimit            int
 	OTELExporterEndpoint string
+	DatabaseURL          string
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -43,6 +45,7 @@ func Load() (*Config, error) {
 		CORSAllowOrigins:     strings.TrimSpace(os.Getenv(CORSAllowOriginsVariableName)),
 		BodyLimit:            DefaultBodyLimit,
 		OTELExporterEndpoint: strings.TrimSpace(os.Getenv(OTELExporterEndpointVarName)),
+		DatabaseURL:          strings.TrimSpace(os.Getenv(DatabaseURLVariableName)),
 	}
 
 	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {
@@ -95,6 +98,9 @@ func (loadedConfig *Config) validate() error {
 	}
 	if loadedConfig.BodyLimit <= 0 {
 		return fmt.Errorf("config: %s must be greater than 0", BodyLimitVariableName)
+	}
+	if loadedConfig.DatabaseURL == "" {
+		return fmt.Errorf("config: %s cannot be empty", DatabaseURLVariableName)
 	}
 
 	return nil
