@@ -50,12 +50,13 @@ import (
 // @schemes        http https
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	if err := run(ctx); err != nil {
 		slog.Error("application exited with error", "error", err)
+		stop()
 		os.Exit(1)
 	}
+	stop()
 }
 
 func run(parentContext context.Context) error {
@@ -146,7 +147,11 @@ func run(parentContext context.Context) error {
 	if grpcListenError != nil {
 		return fmt.Errorf("grpc listen: %w", grpcListenError)
 	}
-	defer grpcListener.Close()
+	defer func() {
+		if closeError := grpcListener.Close(); closeError != nil {
+			slog.Error("grpc listener close", "error", closeError)
+		}
+	}()
 
 	application := router.New(applicationConfiguration, router.Dependencies{
 		UserRepository:       userRepository,
