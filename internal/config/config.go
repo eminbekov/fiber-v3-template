@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Environment variable names (stable contract for operators and .env.example).
@@ -17,6 +18,7 @@ const (
 	OTELExporterEndpointVarName   = "OTEL_EXPORTER_ENDPOINT"
 	DatabaseURLVariableName       = "DATABASE_URL"
 	RedisURLVariableName          = "REDIS_URL"
+	SessionDurationVariableName   = "SESSION_DURATION"
 )
 
 const (
@@ -24,6 +26,7 @@ const (
 	DefaultLogLevel          = "debug"
 	DefaultHTTPListenAddress = ":8080"
 	DefaultBodyLimit         = 4 * 1024 * 1024
+	DefaultSessionDuration   = "24h"
 )
 
 // Config holds application settings loaded from the environment.
@@ -36,6 +39,7 @@ type Config struct {
 	OTELExporterEndpoint string
 	DatabaseURL          string
 	RedisURL             string
+	SessionDuration      time.Duration
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
@@ -49,6 +53,7 @@ func Load() (*Config, error) {
 		OTELExporterEndpoint: strings.TrimSpace(os.Getenv(OTELExporterEndpointVarName)),
 		DatabaseURL:          strings.TrimSpace(os.Getenv(DatabaseURLVariableName)),
 		RedisURL:             strings.TrimSpace(os.Getenv(RedisURLVariableName)),
+		SessionDuration:      24 * time.Hour,
 	}
 
 	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {
@@ -76,6 +81,13 @@ func getenvOrDefault(key string, defaultValue string) string {
 }
 
 func (loadedConfig *Config) validate() error {
+	configuredSessionDuration := strings.TrimSpace(getenvOrDefault(SessionDurationVariableName, DefaultSessionDuration))
+	parsedSessionDuration, parseError := time.ParseDuration(configuredSessionDuration)
+	if parseError != nil {
+		return fmt.Errorf("config: invalid %s: %w", SessionDurationVariableName, parseError)
+	}
+	loadedConfig.SessionDuration = parsedSessionDuration
+
 	switch loadedConfig.Environment {
 	case "development", "production":
 	default:
