@@ -82,3 +82,31 @@ func (checker *StaticErrorChecker) Check(context.Context) error {
 
 // ErrNotReady is a helper sentinel for readiness checks.
 var ErrNotReady = errors.New("not ready")
+
+// DatabaseChecker runs a ping function against a database dependency.
+type DatabaseChecker struct {
+	name         string
+	pingFunction func(context.Context) error
+}
+
+// NewDatabaseChecker creates a readiness checker backed by a ping function.
+func NewDatabaseChecker(name string, pingFunction func(context.Context) error) Checker {
+	return &DatabaseChecker{
+		name:         name,
+		pingFunction: pingFunction,
+	}
+}
+
+// Name returns checker name.
+func (checker *DatabaseChecker) Name() string {
+	return checker.name
+}
+
+// Check calls the configured ping function.
+func (checker *DatabaseChecker) Check(ctx context.Context) error {
+	if checker.pingFunction == nil {
+		return ErrNotReady
+	}
+
+	return checker.pingFunction(ctx)
+}
