@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/gofrs/uuid/v5"
@@ -15,15 +17,18 @@ const (
 	defaultPage     = 1
 	defaultPageSize = 20
 	maxPageSize     = 100
+	userCacheTTL    = 5 * time.Minute
 )
 
 type UserService struct {
 	userRepository repository.UserRepository
+	cache          cache.Cache
 }
 
-func NewUserService(userRepository repository.UserRepository) *UserService {
+func NewUserService(userRepository repository.UserRepository, cache cache.Cache) *UserService {
 	return &UserService{
 		userRepository: userRepository,
+		cache:          cache,
 	}
 }
 
@@ -32,9 +37,21 @@ func (service *UserService) FindByID(ctx context.Context, id uuid.UUID) (*domain
 		return nil, domain.ErrValidation
 	}
 
+	cacheKey := cache.UserByIDKey(id)
+	var cachedUser domain.User
+	if service.cache != nil {
+		if cacheError := service.cache.Get(ctx, cacheKey, &cachedUser); cacheError == nil {
+			return &cachedUser, nil
+		}
+	}
+
 	user, findByIDError := service.userRepository.FindByID(ctx, id)
 	if findByIDError != nil {
 		return nil, fmt.Errorf("UserService.FindByID: %w", findByIDError)
+	}
+
+	if service.cache != nil {
+		_ = service.cache.Set(ctx, cacheKey, user, userCacheTTL)
 	}
 
 	return user, nil
@@ -46,9 +63,21 @@ func (service *UserService) FindByUsername(ctx context.Context, username string)
 		return nil, domain.ErrValidation
 	}
 
+	cacheKey := cache.UserByUsernameKey(normalizedUsername)
+	var cachedUser domain.User
+	if service.cache != nil {
+		if cacheError := service.cache.Get(ctx, cacheKey, &cachedUser); cacheError == nil {
+			return &cachedUser, nil
+		}
+	}
+
 	user, findByUsernameError := service.userRepository.FindByUsername(ctx, normalizedUsername)
 	if findByUsernameError != nil {
 		return nil, fmt.Errorf("UserService.FindByUsername: %w", findByUsernameError)
+	}
+
+	if service.cache != nil {
+		_ = service.cache.Set(ctx, cacheKey, user, userCacheTTL)
 	}
 
 	return user, nil
@@ -96,6 +125,10 @@ func (service *UserService) Create(ctx context.Context, user *domain.User) error
 	if createError := service.userRepository.Create(ctx, user); createError != nil {
 		return fmt.Errorf("UserService.Create: %w", createError)
 	}
+	if service.cache != nil {
+		_ = service.cache.DeleteByPrefix(ctx, "user:list:")
+		_ = service.cache.Delete(ctx, cache.UserByIDKey(user.ID), cache.UserByUsernameKey(user.Username))
+	}
 
 	return nil
 }
@@ -130,6 +163,13 @@ func (service *UserService) Update(ctx context.Context, user *domain.User) error
 	if updateError := service.userRepository.Update(ctx, user); updateError != nil {
 		return fmt.Errorf("UserService.Update: %w", updateError)
 	}
+	if service.cache != nil {
+		_ = service.cache.DeleteByPrefix(ctx, "user:list:")
+		_ = service.cache.Delete(ctx, cache.UserByIDKey(user.ID), cache.UserByUsernameKey(user.Username))
+		if currentUser.Username != user.Username {
+			_ = service.cache.Delete(ctx, cache.UserByUsernameKey(currentUser.Username))
+		}
+	}
 
 	return nil
 }
@@ -141,6 +181,10 @@ func (service *UserService) SoftDelete(ctx context.Context, id uuid.UUID) error 
 
 	if softDeleteError := service.userRepository.SoftDelete(ctx, id); softDeleteError != nil {
 		return fmt.Errorf("UserService.SoftDelete: %w", softDeleteError)
+	}
+	if service.cache != nil {
+		_ = service.cache.DeleteByPrefix(ctx, "user:list:")
+		_ = service.cache.Delete(ctx, cache.UserByIDKey(id))
 	}
 
 	return nil

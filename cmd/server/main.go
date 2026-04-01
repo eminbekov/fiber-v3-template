@@ -65,11 +65,13 @@ func run(parentContext context.Context) error {
 	}()
 
 	userRepository := postgres.NewUserRepository(databasePool)
-	userService := service.NewUserService(userRepository)
+	applicationCache := cache.NewRedisCache(redisClient)
+	userService := service.NewUserService(userRepository, applicationCache)
 
 	application := router.New(applicationConfiguration, router.Dependencies{
 		UserRepository: userRepository,
 		UserService:    userService,
+		Cache:          applicationCache,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 			health.NewRedisChecker("redis", func(ctx context.Context) error {
