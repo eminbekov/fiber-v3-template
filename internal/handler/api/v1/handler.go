@@ -2,23 +2,18 @@ package v1
 
 import (
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
-	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/gofiber/fiber/v3"
 )
 
-type Handler struct {
-	userRepository repository.UserRepository
-}
+type Handler struct{}
 
 type PingResponse struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-func NewHandler(userRepository repository.UserRepository) *Handler {
-	return &Handler{
-		userRepository: userRepository,
-	}
+func NewHandler() *Handler {
+	return &Handler{}
 }
 
 func (handler *Handler) Ping(ctx fiber.Ctx) error {

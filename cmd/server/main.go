@@ -13,6 +13,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	"github.com/eminbekov/fiber-v3-template/internal/repository/postgres"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
+	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/eminbekov/fiber-v3-template/package/health"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
 	"github.com/eminbekov/fiber-v3-template/package/telemetry"
@@ -53,9 +54,11 @@ func run(parentContext context.Context) error {
 	defer databasePool.Close()
 
 	userRepository := postgres.NewUserRepository(databasePool)
+	userService := service.NewUserService(userRepository)
 
 	application := router.New(applicationConfiguration, router.Dependencies{
 		UserRepository: userRepository,
+		UserService:    userService,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
 		},
