@@ -61,8 +61,28 @@ proto: ## Generate Go code from protobuf definitions
 docker-build: ## Build application Docker image
 	docker build -t $(APP_NAME):latest -f $(DOCKERFILE_PATH) .
 
+.PHONY: up
+up: ## Build and start full stack (app, Postgres, Redis, NATS, observability)
+	docker compose -f $(DOCKER_COMPOSE_PATH) up --build -d
+
+.PHONY: down
+down: ## Stop full Docker Compose stack
+	docker compose -f $(DOCKER_COMPOSE_PATH) down
+
+.PHONY: logs
+logs: ## Tail logs for all Compose services
+	docker compose -f $(DOCKER_COMPOSE_PATH) logs -f
+
+.PHONY: monitoring-up
+monitoring-up: ## Start observability services only (Prometheus, Loki, Promtail, Tempo, OTEL Collector, Grafana)
+	docker compose -f $(DOCKER_COMPOSE_PATH) up -d prometheus loki promtail tempo otel-collector grafana
+
+.PHONY: monitoring-down
+monitoring-down: ## Stop observability services only
+	docker compose -f $(DOCKER_COMPOSE_PATH) stop prometheus loki promtail tempo otel-collector grafana
+
 .PHONY: docker-up
-docker-up: ## Start full application stack with Docker Compose
+docker-up: ## Start full application stack with Docker Compose (no rebuild)
 	docker compose -f $(DOCKER_COMPOSE_PATH) up -d
 
 .PHONY: docker-down
