@@ -83,7 +83,7 @@ func (backend *localFileStorage) Upload(ctx context.Context, key string, reader 
 	if mkdirError := os.MkdirAll(filepath.Dir(fullPath), 0o750); mkdirError != nil {
 		return fmt.Errorf("localFileStorage.Upload: mkdir: %w", mkdirError)
 	}
-	file, createError := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o640)
+	file, createError := os.OpenFile(fullPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if createError != nil {
 		return fmt.Errorf("localFileStorage.Upload: %w", createError)
 	}
