@@ -14,6 +14,7 @@ const (
 	HTTPListenAddressVariableName = "HTTP_LISTEN_ADDRESS"
 	CORSAllowOriginsVariableName  = "CORS_ALLOW_ORIGINS"
 	BodyLimitVariableName         = "BODY_LIMIT"
+	OTELExporterEndpointVarName   = "OTEL_EXPORTER_ENDPOINT"
 )
 
 const (
@@ -25,21 +26,23 @@ const (
 
 // Config holds application settings loaded from the environment.
 type Config struct {
-	Environment       string
-	LogLevel          string
-	HTTPListenAddress string
-	CORSAllowOrigins  string
-	BodyLimit         int
+	Environment          string
+	LogLevel             string
+	HTTPListenAddress    string
+	CORSAllowOrigins     string
+	BodyLimit            int
+	OTELExporterEndpoint string
 }
 
 // Load reads configuration from environment variables, applies defaults, and validates.
 func Load() (*Config, error) {
 	loadedConfig := &Config{
-		Environment:       strings.ToLower(strings.TrimSpace(getenvOrDefault(EnvironmentVariableName, DefaultEnvironment))),
-		LogLevel:          strings.ToLower(strings.TrimSpace(getenvOrDefault(LogLevelVariableName, DefaultLogLevel))),
-		HTTPListenAddress: strings.TrimSpace(getenvOrDefault(HTTPListenAddressVariableName, DefaultHTTPListenAddress)),
-		CORSAllowOrigins:  strings.TrimSpace(os.Getenv(CORSAllowOriginsVariableName)),
-		BodyLimit:         DefaultBodyLimit,
+		Environment:          strings.ToLower(strings.TrimSpace(getenvOrDefault(EnvironmentVariableName, DefaultEnvironment))),
+		LogLevel:             strings.ToLower(strings.TrimSpace(getenvOrDefault(LogLevelVariableName, DefaultLogLevel))),
+		HTTPListenAddress:    strings.TrimSpace(getenvOrDefault(HTTPListenAddressVariableName, DefaultHTTPListenAddress)),
+		CORSAllowOrigins:     strings.TrimSpace(os.Getenv(CORSAllowOriginsVariableName)),
+		BodyLimit:            DefaultBodyLimit,
+		OTELExporterEndpoint: strings.TrimSpace(os.Getenv(OTELExporterEndpointVarName)),
 	}
 
 	if configuredBodyLimit := strings.TrimSpace(os.Getenv(BodyLimitVariableName)); configuredBodyLimit != "" {

@@ -12,6 +12,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/router"
 	"github.com/eminbekov/fiber-v3-template/package/logger"
+	"github.com/eminbekov/fiber-v3-template/package/telemetry"
 )
 
 func main() {
@@ -31,6 +32,16 @@ func run(parentContext context.Context) error {
 	}
 
 	logger.Setup(applicationConfiguration.LogLevel, applicationConfiguration.Environment)
+
+	shutdownTelemetry, telemetrySetupError := telemetry.Setup(parentContext, applicationConfiguration.OTELExporterEndpoint)
+	if telemetrySetupError != nil {
+		return fmt.Errorf("telemetry: %w", telemetrySetupError)
+	}
+	defer func() {
+		if telemetryShutdownError := shutdownTelemetry(parentContext); telemetryShutdownError != nil {
+			slog.Error("telemetry shutdown", "error", telemetryShutdownError)
+		}
+	}()
 
 	application := router.New(applicationConfiguration)
 
