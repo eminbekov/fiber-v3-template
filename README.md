@@ -29,6 +29,7 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 │   ├── storage/         # File storage abstraction (local filesystem, S3-compatible)
 │   └── router/          # Fiber app + middleware and route registration
 ├── migrations/          # Sequential SQL migrations (up/down)
+├── monitoring/          # Prometheus, Loki, Grafana, Tempo, OTEL Collector configs (Docker Compose)
 ├── package/
 │   ├── health/          # Reusable liveness and readiness handlers
 │   ├── logger/          # slog setup (JSON in production, text in development)
@@ -81,13 +82,49 @@ Build the app image:
 make docker-build
 ```
 
-Start full stack (app + dependencies):
+**Full stack (recommended):** builds the app image, starts PostgreSQL, Redis, NATS, the HTTP/gRPC app (with **automatic DB migrations** on container start), and the observability stack (Prometheus, Loki, Promtail, Grafana Tempo, OpenTelemetry Collector, Grafana).
+
+```bash
+make up
+```
+
+Equivalent:
+
+```bash
+docker compose -f deploy/docker/docker-compose.yml up --build -d
+```
+
+Stop everything:
+
+```bash
+make down
+```
+
+Tail all service logs:
+
+```bash
+make logs
+```
+
+Start **only** the observability services (when the app and databases already run elsewhere):
+
+```bash
+make monitoring-up
+```
+
+Stop those services:
+
+```bash
+make monitoring-down
+```
+
+Restart stack without rebuilding images:
 
 ```bash
 make docker-up
 ```
 
-Start development dependencies only (PostgreSQL, Redis, NATS):
+Start development dependencies only (PostgreSQL, Redis, NATS — **no** app or monitoring):
 
 ```bash
 make docker-dev
@@ -100,11 +137,31 @@ make docker-down
 make docker-dev-down
 ```
 
-Run migrations inside the app container:
+Run migrations manually inside a running app container (usually not needed — the image entrypoint runs `./migrate up` before `./server`):
 
 ```bash
 make docker-migrate
 ```
+
+### Observability (Compose)
+
+After `make up`, services are available as follows:
+
+| Service | URL | Notes |
+|--------|-----|--------|
+| App HTTP | [http://localhost:8080](http://localhost:8080) | Health: `/health/live`, `/health/ready`, metrics: `/metrics` |
+| Grafana | [http://localhost:3000](http://localhost:3000) | Default login `admin` / `admin` (change in production). |
+| Prometheus | [http://localhost:9090](http://localhost:9090) | UI and `/targets` — scrape target `fiber-v3-template-app`. |
+| Loki | [http://localhost:3100](http://localhost:3100) | Log store; query via Grafana Explore. |
+| Tempo | [http://localhost:3200](http://localhost:3200) | Trace backend; explore traces in Grafana. |
+
+Data flow (see `GO_FIBER_PROJECT_GUIDE.md` §19.3):
+
+- **Logs:** app stdout (JSON in production) → Promtail → Loki → Grafana.
+- **Metrics:** Prometheus scrapes `http://app:8080/metrics` → Grafana.
+- **Traces:** app exports OTLP gRPC to `otel-collector:4317` (set `OTEL_EXPORTER_ENDPOINT` in Compose) → Tempo → Grafana.
+
+Configuration files live under [`monitoring/`](monitoring/).
 
 Cron worker (separate process):
 
