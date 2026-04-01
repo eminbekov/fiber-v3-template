@@ -30,3 +30,6 @@ services:
     command: ["--jetstream"]
     ports:
       - "4222:4222"
+
+volumes:
+  postgres_dev_data:
