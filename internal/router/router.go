@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
@@ -15,6 +16,7 @@ import (
 type Dependencies struct {
 	UserRepository repository.UserRepository
 	UserService    *service.UserService
+	Cache          cache.Cache
 	HealthCheckers []health.Checker
 }
 
