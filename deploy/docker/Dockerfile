@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.1-alpine3.23 AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
@@ -9,7 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/serv
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/cron ./cmd/cron
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/migrate ./cmd/migrate
 
-FROM alpine:3.21
+FROM alpine:3.23.3
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
