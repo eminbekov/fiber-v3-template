@@ -96,9 +96,9 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 9 — HTML templates and i18n (optional product features)
 
-- [ ] Fiber HTML engine setup, layouts, embed (guide §8).
-- [ ] Admin handler area under `internal/handler/admin` if needed (guide §2).
-- [ ] i18n loader, middleware for `Accept-Language`, API and template usage (guide §9).
+- [x] Fiber HTML engine setup, layouts, embed (guide §8).
+- [x] Admin handler area under `internal/handler/admin` if needed (guide §2).
+- [x] i18n loader, middleware for `Accept-Language`, API and template usage (guide §9).
 
 ---
 
