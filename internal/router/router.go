@@ -63,7 +63,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
 	apiV1Group := application.Group("/api/v1")
-	adminGroup := application.Group("/admin", middleware.NewAuthenticate(dependencies.AuthService))
+	adminGroup := application.Group("/admin", middleware.NewAdminAuthenticate(dependencies.AuthService))
 	protectedAPIGroup := apiV1Group.Group("", middleware.NewAuthenticate(dependencies.AuthService))
 
 	application.Get("/health/live", healthHandler.Liveness)
