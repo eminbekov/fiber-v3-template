@@ -10,6 +10,7 @@ CONSOLE_MAIN_PATH := cmd/console/main.go
 # [module:generate:start]
 GENERATE_MAIN_PATH := cmd/generate/main.go
 # [module:generate:end]
+SEED_MAIN_PATH := cmd/seed/main.go
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
 DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
@@ -166,6 +167,10 @@ migrate-down: ## Roll back migration steps (default 1)
 .PHONY: migrate-create
 migrate-create: ## Create a new migration (usage: make migrate-create NAME=create_orders)
 	migrate create -ext sql -dir migrations -seq $(NAME)
+
+.PHONY: seed
+seed: ## Seed development database with test data
+	go run $(SEED_MAIN_PATH)
 
 # --- Swagger ---
 # [module:swagger:start]
