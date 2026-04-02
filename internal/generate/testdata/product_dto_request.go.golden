@@ -1,0 +1,19 @@
+package request
+
+import "strings"
+
+type CreateProductRequest struct {
+	Name string `json:"name" validate:"required,max=100"`
+}
+
+type UpdateProductRequest struct {
+	Name string `json:"name" validate:"required,max=100"`
+}
+
+func (request *CreateProductRequest) Normalize() {
+	request.Name = strings.TrimSpace(request.Name)
+}
+
+func (request *UpdateProductRequest) Normalize() {
+	request.Name = strings.TrimSpace(request.Name)
+}

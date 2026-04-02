@@ -1,0 +1,9 @@
+-- Migration: create_products (up)
+-- Created: 2026-01-01T00:00:00Z
+
+CREATE TABLE IF NOT EXISTS products (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
