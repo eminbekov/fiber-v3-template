@@ -24,10 +24,11 @@ Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fib
 │   ├── repository/      # Repository interfaces and PostgreSQL implementations
 │   ├── session/         # Optional Redis-backed session store (removable)
 │   ├── dto/response/    # Standard API success/error envelopes
-│   ├── handler/         # Centralized error handler + API v1 handlers
+│   ├── handler/         # Error handler; API v1 (JSON); admin HTML; public HTML (`web/`)
 │   ├── middleware/      # Recovery, metrics, request ID, logging, CORS, Helmet, body limit
 │   ├── storage/         # File storage abstraction (local filesystem, S3-compatible)
 │   └── router/          # Fiber app + middleware and route registration
+├── views/               # HTML templates (public + admin layouts and pages)
 ├── migrations/          # Sequential SQL migrations (up/down)
 ├── monitoring/          # Prometheus, Loki, Grafana, Tempo, OTEL Collector configs (Docker Compose)
 ├── package/
@@ -200,7 +201,7 @@ The HTTP server validates `DATABASE_URL` on startup and fails fast if it is miss
 - `internal/cache/redis.go` provides the Redis implementation with `Get`, `Set`, `Delete`, and prefix invalidation.
 - `internal/cache/keys.go` centralizes typed cache key builders to avoid string typos.
 - `internal/service/user_service.go` now uses cache-aside reads and invalidates stale keys after writes.
-- `internal/session/` provides an optional, isolated Redis session store package that can be wired later (for example in HTML admin flows) or removed entirely when not needed.
+- `internal/session/` backs login sessions for both the JSON API and the admin HTML flow (Redis); the admin UI uses a `session_token` cookie that references the same session store as API Bearer tokens.
 
 ## Migrations
 
@@ -279,9 +280,23 @@ make run-cron
 - The server wires repositories in `cmd/server/main.go` and injects them via `router.Dependencies`.
 - Readiness (`/health/ready`) now includes a PostgreSQL ping checker.
 
+## HTML views (public site and admin)
+
+Server-rendered pages use `html/template` under `views/`. Two layout families:
+
+| Area | Layout | Handlers | Notes |
+|------|--------|----------|--------|
+| **Public (end-user)** | `layouts/public.html`, `views/public/` | `internal/handler/web` | Landing page at `/`. |
+| **Admin** | `layouts/base.html`, `layouts/auth.html`, `views/admin/` | `internal/handler/admin` | Sign-in at `/admin/login` (form); dashboard at `/admin/dashboard`. |
+
+**Admin browser sessions:** after a successful `POST /admin/login`, the server sets an HttpOnly cookie `session_token` (SameSite=Lax; `Secure` in production). Protected admin routes read this cookie via `middleware.NewAdminAuthenticate`. The JSON API under `/api/v1` continues to use `Authorization: Bearer <token>` from `POST /api/v1/auth/login` (`middleware.NewAuthenticate`).
+
 ## Endpoints
 
-- `GET /` — service info (`data` envelope with typed payload)
+- `GET /` — public welcome page (HTML)
+- `GET /admin/login`, `POST /admin/login` — admin sign-in form (HTML); sets session cookie on success
+- `POST /admin/logout` — ends admin session (requires admin cookie)
+- `GET /admin/dashboard` — admin dashboard (HTML; requires admin cookie)
 - `GET /health/live`, `GET /health/ready` — liveness and readiness probes
 - `GET /metrics` — Prometheus metrics endpoint
 - `GET /api/v1/ping` — versioned API scaffold endpoint

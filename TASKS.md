@@ -96,9 +96,11 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 9 — HTML templates and i18n (optional product features)
 
-- Fiber HTML engine setup, layouts, embed (guide §8).
-- Admin handler area under `internal/handler/admin` if needed (guide §2).
-- i18n loader, middleware for `Accept-Language`, API and template usage (guide §9).
+- [x] Fiber HTML engine setup, layouts, embed (guide §8).
+- [x] Admin handler area under `internal/handler/admin` (dashboard, HTML login/logout) (guide §2).
+- [x] Public site handlers under `internal/handler/web` with `views/public/` and `layouts/public.html` (separate from admin `layouts/base.html`).
+- [x] Admin browser auth: `GET`/`POST /admin/login`, `POST /admin/logout`; session in HttpOnly `session_token` cookie; API clients keep Bearer `Authorization` on `/api/v1/*`.
+- [x] i18n loader, middleware for `Accept-Language`, API and template usage (guide §9).
 
 ---
 
