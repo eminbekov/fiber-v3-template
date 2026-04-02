@@ -161,12 +161,18 @@ go run ./cmd/server
 ### Common make targets
 
 ```bash
-make build
-make run
-make lint
-make migrate-up
-make migrate-down
-make help
+make build          # Build optimized binary
+make run            # Run the HTTP server
+make clean          # Remove build artifacts
+make dev            # Hot reload (requires air)
+make fmt            # Format all Go files
+make tidy           # Clean go.mod/go.sum
+make lint           # Run golangci-lint
+make verify         # Full pre-push check sequence
+make test           # Run tests with race detector
+make migrate-up     # Apply pending migrations
+make migrate-down   # Roll back last migration
+make help           # List all available targets
 ```
 
 ### Testing and hardening
@@ -394,6 +400,12 @@ This template follows:
 - `CONVENTIONS.md` (coding conventions)
 
 Minimum pre-push local checks:
+
+```bash
+make verify
+```
+
+Equivalent manual steps:
 
 ```bash
 gofmt -s -w .
