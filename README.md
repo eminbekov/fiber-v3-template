@@ -169,6 +169,25 @@ make migrate-down
 make help
 ```
 
+### Testing and hardening
+
+```bash
+# Unit and integration-safe test suite.
+make test
+
+# Repository-style integration tests (requires Docker).
+make test-integration
+
+# Fuzz tests with a 30-second budget.
+make fuzz
+
+# Security scanners.
+make security
+
+# Coverage report (coverage.out + coverage.html).
+make test-cover
+```
+
 ### Migrations
 
 The project includes `cmd/migrate` and matching root `Makefile` targets for the schema lifecycle.
