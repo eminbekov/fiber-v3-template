@@ -29,7 +29,8 @@ func ToSnakeCase(name string) string {
 }
 
 func ToCamelCase(name string) string {
-	parts := strings.Split(strings.ReplaceAll(strings.ReplaceAll(name, "-", "_"), " ", "_"), "_")
+	normalizedName := ToSnakeCase(name)
+	parts := strings.Split(strings.ReplaceAll(strings.ReplaceAll(normalizedName, "-", "_"), " ", "_"), "_")
 	var builder strings.Builder
 	for _, partValue := range parts {
 		if partValue == "" {
