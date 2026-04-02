@@ -25,11 +25,13 @@ services:
       timeout: 3s
       retries: 5
 
+  # [module:nats:start]
   nats:
     image: nats:2.12.6-alpine
     command: ["--jetstream"]
     ports:
       - "4222:4222"
+  # [module:nats:end]
 
 volumes:
   postgres_dev_data:
