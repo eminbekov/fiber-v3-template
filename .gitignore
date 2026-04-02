@@ -12,9 +12,11 @@
 
 # Output of go coverage
 *.out
+coverage.html
 
 # Dependency directories
 vendor/
+/tmp/
 
 # Environment (never commit secrets)
 .env

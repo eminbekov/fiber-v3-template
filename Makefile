@@ -9,13 +9,18 @@ DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
 DOCKER_COMPOSE_DEV_PATH := deploy/docker/docker-compose.dev.yml
 
+# --- Build ---
 .PHONY: build
 build: ## Build the HTTP server binary
-	CGO_ENABLED=0 go build -o $(BUILD_DIR)/$(APP_NAME) $(SERVER_MAIN_PATH)
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/$(APP_NAME) $(SERVER_MAIN_PATH)
 
 .PHONY: run
 run: ## Run the HTTP server
 	go run $(SERVER_MAIN_PATH)
+
+.PHONY: clean
+clean: ## Remove build artifacts
+	rm -rf $(BUILD_DIR)
 
 # [module:cron:start]
 .PHONY: build-cron
@@ -27,10 +32,20 @@ run-cron: ## Run the cron binary
 	go run $(CRON_MAIN_PATH)
 # [module:cron:end]
 
+# --- Development ---
 .PHONY: tidy
 tidy: ## Tidy go module files
 	go mod tidy
 
+.PHONY: fmt
+fmt: ## Format all Go source files
+	gofmt -s -w .
+
+.PHONY: dev
+dev: ## Run with hot reload (requires: go install github.com/air-verse/air@latest)
+	air
+
+# --- Code Quality ---
 .PHONY: lint
 lint: ## Run linter
 	golangci-lint run ./...
@@ -39,6 +54,7 @@ lint: ## Run linter
 vet: ## Run go vet checks
 	go vet ./...
 
+# --- Testing ---
 .PHONY: test
 test: ## Run all tests with race detector
 	go test -race -count=1 ./...
@@ -69,6 +85,7 @@ security: ## Run security scanners
 	govulncheck ./...
 	gosec ./...
 
+# --- Database ---
 .PHONY: migrate-up
 migrate-up: ## Run pending migrations
 	go run $(MIGRATE_MAIN_PATH) up
@@ -81,6 +98,7 @@ migrate-down: ## Roll back migration steps (default 1)
 migrate-create: ## Create a new migration (usage: make migrate-create NAME=create_orders)
 	migrate create -ext sql -dir migrations -seq $(NAME)
 
+# --- Swagger ---
 # [module:swagger:start]
 .PHONY: swagger
 swagger: ## Generate Swagger docs from handler annotations
@@ -91,6 +109,7 @@ swagger-fmt: ## Format Swagger annotations
 	swag fmt
 # [module:swagger:end]
 
+# --- Protobuf ---
 # [module:grpc:start]
 .PHONY: proto
 proto: ## Generate Go code from protobuf definitions
@@ -99,6 +118,7 @@ proto: ## Generate Go code from protobuf definitions
 	       proto/**/**/*.proto
 # [module:grpc:end]
 
+# --- Docker ---
 .PHONY: docker-build
 docker-build: ## Build application Docker image
 	docker build -t $(APP_NAME):latest -f $(DOCKERFILE_PATH) .
@@ -159,6 +179,7 @@ docker-health: ## Check server health endpoints
 	curl -fsS http://localhost:8080/health/ready
 	curl -fsS http://localhost:8080/metrics >/dev/null
 
+# --- Help ---
 .PHONY: help
 help: ## Show available make targets
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z_-]+:.*## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
