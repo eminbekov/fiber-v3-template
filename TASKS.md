@@ -156,10 +156,10 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 16 — Console CLI (`cmd/console`)
 
-- Entry point routing subcommands with `context.Context` (guide §29).
-- Shared wiring: config, DB pool, Redis—reuse services, not duplicate logic (guide §29.5).
-- Example commands: `create-admin`, `assign-role`, `cache-clear`, `export-users` (guide §29.3–§29.4).
-- Document commands in `README` and mirror important flows in `Makefile` (guide §29.4).
+- [x] Entry point routing subcommands with `context.Context` (guide §29).
+- [x] Shared wiring: config, DB pool, Redis—reuse services, not duplicate logic (guide §29.5).
+- [x] Example commands: `create-admin`, `assign-role`, `cache-clear`, `export-users` (guide §29.3–§29.4).
+- [x] Document commands in `README` and mirror important flows in `Makefile` (guide §29.4).
 
 ---
 
