@@ -1,6 +1,6 @@
 # AI agent instructions
 
-Rules for automated tools and contributors working on **fiber-v3-template**. Aligns with `CONVENTIONS.md` and project linting.
+Rules for automated tools and contributors working on **fiber-v3-template**. Aligns with `CONVENTIONS.md`, `ARCHITECTURE.md`, and project linting.
 
 ## Git workflow
 
@@ -42,6 +42,11 @@ Group imports in three blocks separated by blank lines:
 - `context.Context` must be the first parameter on functions that perform I/O or respect cancellation.
 - Keep handlers thin: parse request, call service, write response.
 
+## Receivers
+
+- Value receivers when the method only reads; pointer receivers when it mutates.
+- If any method on a type uses a pointer receiver, prefer pointer receivers for all methods on that type.
+
 ## Secrets
 
 - Never read, commit, or paste contents of `.env`. Use `.env.example` for documented variable names only.
@@ -49,7 +54,7 @@ Group imports in three blocks separated by blank lines:
 ## Optional module markers
 
 - Optional feature blocks are wrapped with marker comments: `// [module:<key>:start]` and `// [module:<key>:end]`.
-- Marker keys currently used: `nats`, `grpc`, `websocket`, `admin`, `web`, `i18n`, `storage`, `cron`, `monitoring`, `swagger`, `views`.
+- Marker keys currently used: `nats`, `grpc`, `websocket`, `admin`, `web`, `i18n`, `storage`, `cron`, `console`, `generate`, `k8s`, `monitoring`, `swagger`, `views`.
 - The installer script `setup.sh` uses these markers to remove disabled modules safely.
 - When adding a new removable feature, mark imports, config fields, wiring blocks, routes, and infra snippets consistently.
 - Keep marker blocks statement-scoped; do not wrap partial expressions.
