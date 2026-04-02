@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fiber-template
+  namespace: fiber-template
+spec:
+  selector:
+    app.kubernetes.io/name: fiber-template
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  type: ClusterIP

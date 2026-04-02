@@ -1,0 +1,110 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: fiber-template-waf
+  namespace: fiber-template
+spec:
+  workloadSelector:
+    labels:
+      app.kubernetes.io/name: fiber-template
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            inlineCode: |
+              local function blocked(message)
+                return message and string.len(message) > 0
+              end
+
+              local function lower(value)
+                if value == nil then
+                  return ""
+                end
+                return string.lower(value)
+              end
+
+              local function contains(target, pattern)
+                return string.find(target, pattern, 1, true) ~= nil
+              end
+
+              function envoy_on_request(request_handle)
+                local path = lower(request_handle:headers():get(":path"))
+                local user_agent = lower(request_handle:headers():get("user-agent"))
+                local content_length = tonumber(request_handle:headers():get("content-length") or "0")
+
+                if content_length > 10485760 then
+                  request_handle:respond({[":status"] = "413", ["content-type"] = "application/json"}, "{\"error\":\"payload too large\"}")
+                  return
+                end
+
+                if contains(path, "../") or contains(path, "..\\") then
+                  request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"path traversal blocked\"}")
+                  return
+                end
+
+                local sensitive_paths = {".git", ".env", ".htaccess", ".svn", "id_rsa"}
+                for _, sensitive_value in ipairs(sensitive_paths) do
+                  if contains(path, sensitive_value) then
+                    request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"sensitive path blocked\"}")
+                    return
+                  end
+                end
+
+                local sql_signatures = {"' or 1=1", "union select", "drop table", "information_schema", "--"}
+                for _, signature_value in ipairs(sql_signatures) do
+                  if contains(path, signature_value) then
+                    request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"sql injection blocked\"}")
+                    return
+                  end
+                end
+
+                local xss_signatures = {"<script", "javascript:", "onerror=", "onload="}
+                for _, signature_value in ipairs(xss_signatures) do
+                  if contains(path, signature_value) then
+                    request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"xss blocked\"}")
+                    return
+                  end
+                end
+
+                local command_signatures = {";rm ", "&&", "|bash", "`", "$("}
+                for _, signature_value in ipairs(command_signatures) do
+                  if contains(path, signature_value) then
+                    request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"command injection blocked\"}")
+                    return
+                  end
+                end
+
+                local bad_agents = {"sqlmap", "nikto", "nmap", "slowloris", "loic"}
+                for _, agent_value in ipairs(bad_agents) do
+                  if contains(user_agent, agent_value) then
+                    request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"scanner user-agent blocked\"}")
+                    return
+                  end
+                end
+
+                if contains(path, "169.254.169.254") or contains(path, "127.0.0.1") or contains(path, "localhost") then
+                  request_handle:respond({[":status"] = "403", ["content-type"] = "application/json"}, "{\"error\":\"ssrf target blocked\"}")
+                  return
+                end
+              end
+
+              function envoy_on_response(response_handle)
+                response_handle:headers():replace("strict-transport-security", "max-age=31536000; includeSubDomains")
+                response_handle:headers():replace("content-security-policy", "default-src 'self'")
+                response_handle:headers():replace("x-frame-options", "DENY")
+                response_handle:headers():replace("x-content-type-options", "nosniff")
+                response_handle:headers():remove("x-powered-by")
+                response_handle:headers():remove("server")
+              end
