@@ -1,0 +1,8 @@
+{{define "partials/public_header"}}
+<header style="padding: 16px 24px; border-bottom: 1px solid #e0e0e0; background: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <strong style="font-size: 1.1rem;"><a href="/" style="color: inherit; text-decoration: none;">{{call .T "welcome.site_name"}}</a></strong>
+    <nav>
+        <a href="/admin/login" style="color: #1565c0; text-decoration: none;">{{call .T "welcome.admin_link"}}</a>
+    </nav>
+</header>
+{{end}}
