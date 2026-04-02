@@ -18,6 +18,7 @@ readonly MODULE_KEYS=(
   "i18n"
   "storage"
   "cron"
+  "console"
   "monitoring"
   "swagger"
   "views"
@@ -43,6 +44,7 @@ declare -A MODULE_DESCRIPTIONS=(
   ["i18n"]="Language detection and locale translations"
   ["storage"]="File upload/download and signed URLs"
   ["cron"]="Dedicated cron binary and in-app scheduler wiring"
+  ["console"]="Console CLI admin commands (create-admin, assign-role, cache-clear, export-users)"
   ["monitoring"]="Prometheus/Loki/Tempo/Grafana compose services"
   ["swagger"]="Generated OpenAPI docs and Swagger route"
 )
@@ -56,6 +58,7 @@ declare -A MODULE_PATHS=(
   ["i18n"]="internal/i18n internal/middleware/language.go"
   ["storage"]="internal/storage uploads internal/middleware/signed_url.go"
   ["cron"]="internal/cron cmd/cron"
+  ["console"]="internal/console cmd/console"
   ["monitoring"]="monitoring"
   ["swagger"]="docs"
 )
