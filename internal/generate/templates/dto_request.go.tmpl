@@ -1,0 +1,19 @@
+package request
+
+import "strings"
+
+type Create{{.EntityName}}Request struct {
+	Name string `json:"name" validate:"required,max=100"`
+}
+
+type Update{{.EntityName}}Request struct {
+	Name string `json:"name" validate:"required,max=100"`
+}
+
+func (request *Create{{.EntityName}}Request) Normalize() {
+	request.Name = strings.TrimSpace(request.Name)
+}
+
+func (request *Update{{.EntityName}}Request) Normalize() {
+	request.Name = strings.TrimSpace(request.Name)
+}

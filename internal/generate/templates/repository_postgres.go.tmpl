@@ -1,0 +1,119 @@
+package postgres
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"{{.ModulePath}}/internal/domain"
+	"{{.ModulePath}}/internal/repository"
+	"github.com/gofrs/uuid/v5"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type {{.EntityVariable}}Repository struct {
+	pool *pgxpool.Pool
+}
+
+func New{{.EntityName}}Repository(pool *pgxpool.Pool) repository.{{.EntityName}}Repository {
+	return &{{.EntityVariable}}Repository{pool: pool}
+}
+
+func (repository *{{.EntityVariable}}Repository) FindByID(ctx context.Context, id uuid.UUID) (*domain.{{.EntityName}}, error) {
+	const query = `SELECT id, name, created_at, updated_at, deleted_at
+FROM {{.TableName}}
+WHERE id = $1 AND deleted_at IS NULL`
+
+	rows, queryError := repository.pool.Query(ctx, query, id)
+	if queryError != nil {
+		return nil, fmt.Errorf("{{.EntityVariable}}Repository.FindByID query: %w", queryError)
+	}
+	defer rows.Close()
+
+	{{.EntityVariable}}, collectError := pgx.CollectOneRow(rows, pgx.RowToStructByName[domain.{{.EntityName}}])
+	if collectError != nil {
+		if errors.Is(collectError, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("{{.EntityVariable}}Repository.FindByID: %w", collectError)
+	}
+
+	return &{{.EntityVariable}}, nil
+}
+
+func (repository *{{.EntityVariable}}Repository) List(ctx context.Context, page int, pageSize int) ([]domain.{{.EntityName}}, int64, error) {
+	const listQuery = `SELECT id, name, created_at, updated_at, deleted_at
+FROM {{.TableName}}
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2`
+	const countQuery = `SELECT COUNT(1) FROM {{.TableName}} WHERE deleted_at IS NULL`
+
+	offset := (page - 1) * pageSize
+	rows, queryError := repository.pool.Query(ctx, listQuery, pageSize, offset)
+	if queryError != nil {
+		return nil, 0, fmt.Errorf("{{.EntityVariable}}Repository.List query: %w", queryError)
+	}
+	defer rows.Close()
+
+	entities, collectRowsError := pgx.CollectRows(rows, pgx.RowToStructByName[domain.{{.EntityName}}])
+	if collectRowsError != nil {
+		return nil, 0, fmt.Errorf("{{.EntityVariable}}Repository.List collect rows: %w", collectRowsError)
+	}
+
+	var totalCount int64
+	if scanError := repository.pool.QueryRow(ctx, countQuery).Scan(&totalCount); scanError != nil {
+		return nil, 0, fmt.Errorf("{{.EntityVariable}}Repository.List count: %w", scanError)
+	}
+
+	return entities, totalCount, nil
+}
+
+func (repository *{{.EntityVariable}}Repository) Create(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error {
+	const query = `INSERT INTO {{.TableName}} (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4)`
+
+	now := time.Now().UTC()
+	if {{.EntityVariable}}.ID == uuid.Nil {
+		createdID, newIDError := uuid.NewV7()
+		if newIDError != nil {
+			return fmt.Errorf("{{.EntityVariable}}Repository.Create new v7 uuid: %w", newIDError)
+		}
+		{{.EntityVariable}}.ID = createdID
+	}
+	{{.EntityVariable}}.CreatedAt = now
+	{{.EntityVariable}}.UpdatedAt = now
+
+	if _, execError := repository.pool.Exec(ctx, query, {{.EntityVariable}}.ID, {{.EntityVariable}}.Name, {{.EntityVariable}}.CreatedAt, {{.EntityVariable}}.UpdatedAt); execError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Repository.Create: %w", execError)
+	}
+	return nil
+}
+
+func (repository *{{.EntityVariable}}Repository) Update(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error {
+	const query = `UPDATE {{.TableName}} SET name = $2, updated_at = $3 WHERE id = $1 AND deleted_at IS NULL`
+
+	{{.EntityVariable}}.UpdatedAt = time.Now().UTC()
+	commandTag, execError := repository.pool.Exec(ctx, query, {{.EntityVariable}}.ID, {{.EntityVariable}}.Name, {{.EntityVariable}}.UpdatedAt)
+	if execError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Repository.Update: %w", execError)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (repository *{{.EntityVariable}}Repository) SoftDelete(ctx context.Context, id uuid.UUID) error {
+	const query = `UPDATE {{.TableName}} SET deleted_at = now(), updated_at = now() WHERE id = $1 AND deleted_at IS NULL`
+
+	commandTag, execError := repository.pool.Exec(ctx, query, id)
+	if execError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Repository.SoftDelete: %w", execError)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}

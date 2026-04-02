@@ -1,0 +1,99 @@
+package {{.APIVersion}}
+
+import (
+	"fmt"
+	"strconv"
+
+	"{{.ModulePath}}/internal/domain"
+	requestDTO "{{.ModulePath}}/internal/dto/request"
+	"{{.ModulePath}}/internal/dto/response"
+	response{{.APIVersion}} "{{.ModulePath}}/internal/dto/response/{{.APIVersion}}"
+	"{{.ModulePath}}/internal/i18n"
+	"{{.ModulePath}}/internal/service"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofrs/uuid/v5"
+)
+
+type {{.EntityName}}Handler struct {
+	{{.EntityVariable}}Service *service.{{.EntityName}}Service
+	translator      *i18n.Translator
+}
+
+func New{{.EntityName}}Handler({{.EntityVariable}}Service *service.{{.EntityName}}Service, translator *i18n.Translator) *{{.EntityName}}Handler {
+	return &{{.EntityName}}Handler{
+		{{.EntityVariable}}Service: {{.EntityVariable}}Service,
+		translator:      translator,
+	}
+}
+
+func (handler *{{.EntityName}}Handler) Create(ctx fiber.Ctx) error {
+	var request requestDTO.Create{{.EntityName}}Request
+	if bindError := ctx.Bind().Body(&request); bindError != nil {
+		return domain.ErrValidation
+	}
+	request.Normalize()
+
+	{{.EntityVariable}} := &domain.{{.EntityName}}{Name: request.Name}
+	if createError := handler.{{.EntityVariable}}Service.Create(ctx.Context(), {{.EntityVariable}}); createError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Handler.Create: %w", createError)
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(response.Response{
+		Data: response{{.APIVersion}}.New{{.EntityName}}Response(*{{.EntityVariable}}),
+	})
+}
+
+func (handler *{{.EntityName}}Handler) FindByID(ctx fiber.Ctx) error {
+	id, idError := uuid.FromString(ctx.Params("id"))
+	if idError != nil {
+		return domain.ErrValidation
+	}
+	{{.EntityVariable}}, findByIDError := handler.{{.EntityVariable}}Service.FindByID(ctx.Context(), id)
+	if findByIDError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Handler.FindByID: %w", findByIDError)
+	}
+	return ctx.JSON(response.Response{
+		Data: response{{.APIVersion}}.New{{.EntityName}}Response(*{{.EntityVariable}}),
+	})
+}
+
+func (handler *{{.EntityName}}Handler) List(ctx fiber.Ctx) error {
+	pageValue, _ := strconv.Atoi(ctx.Query("page", "1"))
+	pageSizeValue, _ := strconv.Atoi(ctx.Query("page_size", "20"))
+	entities, totalCount, listError := handler.{{.EntityVariable}}Service.List(ctx.Context(), pageValue, pageSizeValue)
+	if listError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Handler.List: %w", listError)
+	}
+	return ctx.JSON(response.Response{
+		Data: response{{.APIVersion}}.New{{.EntityName}}ListResponse(entities, totalCount, pageValue, pageSizeValue),
+	})
+}
+
+func (handler *{{.EntityName}}Handler) Update(ctx fiber.Ctx) error {
+	id, idError := uuid.FromString(ctx.Params("id"))
+	if idError != nil {
+		return domain.ErrValidation
+	}
+	var request requestDTO.Update{{.EntityName}}Request
+	if bindError := ctx.Bind().Body(&request); bindError != nil {
+		return domain.ErrValidation
+	}
+	request.Normalize()
+	{{.EntityVariable}} := &domain.{{.EntityName}}{ID: id, Name: request.Name}
+	if updateError := handler.{{.EntityVariable}}Service.Update(ctx.Context(), {{.EntityVariable}}); updateError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Handler.Update: %w", updateError)
+	}
+	return ctx.JSON(response.Response{
+		Data: response{{.APIVersion}}.New{{.EntityName}}Response(*{{.EntityVariable}}),
+	})
+}
+
+func (handler *{{.EntityName}}Handler) Delete(ctx fiber.Ctx) error {
+	id, idError := uuid.FromString(ctx.Params("id"))
+	if idError != nil {
+		return domain.ErrValidation
+	}
+	if deleteError := handler.{{.EntityVariable}}Service.SoftDelete(ctx.Context(), id); deleteError != nil {
+		return fmt.Errorf("{{.EntityVariable}}Handler.Delete: %w", deleteError)
+	}
+	return ctx.SendStatus(fiber.StatusNoContent)
+}
