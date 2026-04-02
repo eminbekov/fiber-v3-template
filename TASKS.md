@@ -165,14 +165,14 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 17 — Code generator (Yii2 Gii–style)
 
-- **CLI design:** e.g. `go run ./cmd/gen …` or `./bin/console generate …` with subcommands.
-- **Migration:** `generate migration <name>` — create timestamped up/down SQL stubs under `migrations/` (wraps `migrate create` or equivalent).
-- **CRUD / module:** `generate resource <name>` — optional flags for `--with-repo`, `--with-handler`, API version.
+- [x] **CLI design:** e.g. `go run ./cmd/generate …` or `./bin/console generate …` with subcommands.
+- [x] **Migration:** `generate migration <name>` — create timestamped up/down SQL stubs under `migrations/` (wraps `migrate create` or equivalent).
+- [x] **CRUD / module:** `generate resource <name>` — optional flags for `--with-repo`, `--with-handler`, API version.
   - Emit: `internal/domain/<entity>.go`, repository interface, `postgres` stub, service stub, handler stubs, DTOs under `dto/request` and `dto/response/v1`, router registration snippet or file.
-- **Templates:** use `text/template` or `embed` for codegen templates; keep templates versioned in repo.
-- **Idempotence / safety:** dry-run flag; never overwrite without `--force`.
-- **Tests:** generator golden-file tests for emitted code shape.
-- **Docs:** short “Codegen” section in `README` listing commands and examples.
+- [x] **Templates:** use `text/template` or `embed` for codegen templates; keep templates versioned in repo.
+- [x] **Idempotence / safety:** dry-run flag; never overwrite without `--force`.
+- [x] **Tests:** generator golden-file tests for emitted code shape.
+- [x] **Docs:** short “Codegen” section in `README` listing commands and examples.
 
 ---
 
