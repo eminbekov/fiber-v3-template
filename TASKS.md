@@ -178,8 +178,8 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 18 — Kubernetes / advanced edge (when you deploy to K8s)
 
-- Manifests under `deploy/k8s` (guide §2).
-- Optional Envoy WAF / filters if using service mesh (guide §26).
+- [x] Manifests under `deploy/k8s` (guide §2).
+- [x] Optional Envoy WAF / filters if using service mesh (guide §26).
 
 ---
 
