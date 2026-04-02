@@ -62,7 +62,7 @@ The installer removes blocks for disabled modules and removes marker comments fo
 | `console` | Console CLI admin commands | `cmd/console`, `internal/console` | `DATABASE_URL`, `REDIS_URL` |
 | `generate` | Code generator CLI (migrations and resource scaffolding) | `cmd/generate`, `internal/generate` | - |
 | `k8s` | Kubernetes manifests and Envoy WAF filter | `deploy/k8s` | - |
-| `monitoring` | Local observability stack configs | `monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
+| `monitoring` | Local observability stack configs | `deploy/monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
 | `swagger` | Generated OpenAPI docs and route | `docs` | - |
 
 ### Manual removal (without installer)
@@ -93,11 +93,14 @@ make lint
 ├── cmd/
 │   ├── server/              # Main HTTP + app wiring
 │   ├── migrate/             # Migration CLI
+│   ├── seed/                # Development database seeder
 │   ├── console/             # Optional console CLI commands
 │   ├── generate/            # Optional code generator CLI
 │   └── cron/                # Optional cron binary
-├── deploy/docker/           # Dockerfile and compose manifests
-├── deploy/k8s/              # Optional Kubernetes manifests and EnvoyFilter
+├── deploy/
+│   ├── docker/              # Dockerfile and compose manifests
+│   ├── k8s/                 # Optional Kubernetes manifests and EnvoyFilter
+│   └── monitoring/          # Optional observability stack configs
 ├── internal/
 │   ├── config/              # Env config parsing/validation
 │   ├── database/            # pgx pool and DB helpers
@@ -105,12 +108,12 @@ make lint
 │   ├── service/             # Business services
 │   ├── handler/             # API, admin, and web handlers
 │   ├── middleware/          # Request middleware stack
+│   ├── helpers/             # Shared validation and utility functions
 │   ├── nats/                # Optional NATS module
 │   ├── grpc/                # Optional gRPC module
 │   ├── websocket/           # Optional websocket module
 │   └── storage/             # Optional storage module
 ├── migrations/              # SQL migrations
-├── monitoring/              # Optional observability stack configs
 ├── views/                   # Optional HTML templates
 ├── .env.example
 ├── setup.sh
@@ -178,6 +181,7 @@ make verify         # Full pre-push check sequence
 make test           # Run tests with race detector
 make migrate-up     # Apply pending migrations
 make migrate-down   # Roll back last migration
+make seed           # Seed development database with test data
 make build-console  # Build console binary
 make create-admin   # Create admin user from CLI
 make assign-role    # Assign role from CLI
@@ -423,7 +427,7 @@ Telemetry flow:
 - Metrics: Prometheus scrapes `http://app:8080/metrics` -> Grafana
 - Traces: app exports OTLP gRPC to `otel-collector:4317` -> Tempo -> Grafana
 
-Monitoring configuration is stored under `monitoring/`.
+Monitoring configuration is stored under `deploy/monitoring/`.
 
 ## Endpoints
 
@@ -457,6 +461,12 @@ GitHub Actions:
 - `.github/workflows/deploy.yml`:
   - manual deploy workflow (`workflow_dispatch`)
 
+GitLab CI:
+
+- `.gitlab-ci.yml`:
+  - lint, test, security, swagger, build, and deploy stages
+  - Manual deploy gate for production
+
 ### Deployment setup (template reuse)
 
 `deploy.yml` is designed as a reusable workflow template. Configure these repository secrets before running a manual deploy:
@@ -487,9 +497,11 @@ Manual deploy flow:
 
 This template follows:
 
-- `GO_FIBER_PROJECT_GUIDE.md` (architecture, coding, testing, git practices)
-- `AGENTS.md` (project-specific implementation rules)
-- `CONVENTIONS.md` (coding conventions)
+- `ARCHITECTURE.md` (DDD layers, directory layout, dependency direction)
+- `CONVENTIONS.md` (coding conventions, naming, error handling, performance)
+- `TESTING.md` (testing strategy, unit/integration/fuzz patterns)
+- `SECURITY.md` (security policy, auth, transport, secrets)
+- `AGENTS.md` (project-specific rules for AI tools)
 
 Minimum pre-push local checks:
 
@@ -510,7 +522,7 @@ go test -race -count=1 ./...
 
 ### Branch and commit rules by change type
 
-Use GitHub Flow from `GO_FIBER_PROJECT_GUIDE.md`:
+Use GitHub Flow:
 
 1. Sync `main`.
 2. Create a new branch from `main`.
