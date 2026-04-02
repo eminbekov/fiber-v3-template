@@ -182,6 +182,13 @@ func wireApplication(
 		return nil, fmt.Errorf("translator: %w", translatorError)
 	}
 	dashboardHandler := admin.NewDashboardHandler(translator)
+	secureSessionCookie := applicationConfiguration.Environment == "production"
+	adminAuthHandler := admin.NewAdminAuthHandler(
+		authService,
+		translator,
+		applicationConfiguration.SessionDuration,
+		secureSessionCookie,
+	)
 	userGRPCServer := internalgrpc.NewUserServer(userService)
 	grpcServer := internalgrpc.NewServer()
 	userv1.RegisterUserServiceServer(grpcServer, userGRPCServer)
@@ -194,7 +201,7 @@ func wireApplication(
 	routerDependencies := router.Dependencies{
 		UserRepository: userRepository, RoleRepository: roleRepository, PermissionRepository: permissionRepository,
 		UserService: userService, AuthService: authService, AuthorizationService: authorizationService,
-		DashboardHandler: dashboardHandler, Translator: translator, Cache: applicationCache,
+		AdminAuthHandler: adminAuthHandler, DashboardHandler: dashboardHandler, Translator: translator, Cache: applicationCache,
 		FileService: fileService, WebSocketHub: webSocketHub,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
