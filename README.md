@@ -140,6 +140,16 @@ Copy `.env.example` to `.env` (or run `./setup.sh` which generates it interactiv
 | `FILE_SIGNING_KEY` | If storage enabled | none | HMAC key for file links |
 | `SIGNED_URL_TTL` | If storage enabled | `15m` | Signed URL duration |
 
+### Database setup
+
+Install PostgreSQL locally, or run it with Docker, then set `DATABASE_URL`.
+
+```bash
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/fiber_template?sslmode=disable"
+```
+
+The HTTP server validates `DATABASE_URL` during startup and exits early when the value is missing or malformed.
+
 ## Development Workflow
 
 ### Local run
@@ -157,6 +167,30 @@ make lint
 make migrate-up
 make migrate-down
 make help
+```
+
+### Migrations
+
+The project includes `cmd/migrate` and matching root `Makefile` targets for the schema lifecycle.
+
+```bash
+# Apply pending migrations.
+make migrate-up
+
+# Roll back the latest migration (or set N=2, N=3, ...).
+make migrate-down
+
+# Create the next sequential migration files.
+make migrate-create NAME=create_orders
+```
+
+You can also run the migration CLI directly:
+
+```bash
+go run ./cmd/migrate up
+go run ./cmd/migrate down 1
+go run ./cmd/migrate version
+go run ./cmd/migrate force 1
 ```
 
 ### Docker workflows
@@ -202,6 +236,78 @@ flowchart LR
     grpcServer --> services
 ```
 
+### Repository layer
+
+- `internal/repository/user_repository.go` defines the data-access contract.
+- `internal/repository/postgres/user.go` provides the PostgreSQL implementation using `pgx/v5`.
+- Wiring is done in `cmd/server/main.go` through `router.Dependencies`.
+- Readiness endpoint `/health/ready` includes a PostgreSQL ping check.
+
+### Cache and sessions
+
+- `internal/cache/cache.go` defines the cache contract consumed by services.
+- `internal/cache/redis.go` implements Redis cache operations (`Get`, `Set`, `Delete`, prefix invalidation).
+- `internal/cache/keys.go` centralizes typed key builders to avoid string mistakes.
+- `internal/service/user_service.go` uses cache-aside reads and invalidates stale keys after writes.
+- `internal/session/` stores login sessions for both JSON API and admin HTML flows (Redis backend).
+- Admin UI uses an HttpOnly `session_token` cookie pointing to the same session store used by API bearer-token sessions.
+
+### Cron and scheduled jobs
+
+- In-process mode is wired in `cmd/server/main.go` and runs jobs under the same `errgroup` cancellation context as HTTP, gRPC, and consumers.
+- Separate mode is available in `cmd/cron/main.go` when cron should run once across multiple app instances.
+- Jobs are registered in `internal/cron/scheduler.go` with structured start/completion/failure logs and graceful stop through `context.Context`.
+
+Useful commands:
+
+```bash
+make build-cron
+make run-cron
+```
+
+### HTML views (public and admin)
+
+Server-rendered pages use `html/template` under `views/`.
+
+| Area | Layout | Handlers | Notes |
+|---|---|---|---|
+| Public (end user) | `layouts/public.html`, `views/public/` | `internal/handler/web` | Landing page at `/`. |
+| Admin | `layouts/base.html`, `layouts/auth.html`, `views/admin/` | `internal/handler/admin` | Sign-in at `/admin/login`; dashboard at `/admin/dashboard`. |
+
+Admin browser sessions:
+
+- After successful `POST /admin/login`, the server sets an HttpOnly `session_token` cookie (`SameSite=Lax`, `Secure` in production).
+- Protected admin routes use `middleware.NewAdminAuthenticate`.
+- JSON API routes under `/api/v1` continue to use `Authorization: Bearer <token>` via `middleware.NewAuthenticate`.
+
+### Middleware stack order
+
+Registered in this order:
+
+1. Recovery middleware (panic protection with stack-trace logging)
+2. Prometheus metrics middleware
+3. Request ID middleware (`X-Request-ID`)
+4. Structured request logging middleware (`slog`)
+5. Helmet security headers middleware
+6. CORS middleware (configurable allowlist)
+7. Body-limit enforcement middleware
+
+### Observability details
+
+Health and metrics:
+
+- `GET /health/live` and `GET /health/ready` return typed JSON health responses.
+- `GET /metrics` exposes Prometheus metrics, including request totals, durations, and in-flight requests.
+- Set `OTEL_EXPORTER_ENDPOINT` to enable OTLP gRPC export for OpenTelemetry providers.
+
+Telemetry flow:
+
+- Logs: app stdout -> Promtail -> Loki -> Grafana
+- Metrics: Prometheus scrapes `http://app:8080/metrics` -> Grafana
+- Traces: app exports OTLP gRPC to `otel-collector:4317` -> Tempo -> Grafana
+
+Monitoring configuration is stored under `monitoring/`.
+
 ## Endpoints
 
 - `GET /health/live`
@@ -233,6 +339,32 @@ GitHub Actions:
 - `.github/workflows/deploy.yml`:
   - manual deploy workflow (`workflow_dispatch`)
 
+### Deployment setup (template reuse)
+
+`deploy.yml` is designed as a reusable workflow template. Configure these repository secrets before running a manual deploy:
+
+- `SERVER_HOST`: target server hostname or IP
+- `SERVER_USER`: SSH username
+- `SSH_PRIVATE_KEY`: private key used for SSH authentication
+- `APP_DIR`: absolute path to the app directory on the server
+
+Server prerequisites:
+
+- Docker and Docker Compose installed
+- Repository deployed on the server with `deploy/docker/docker-compose.yml` available
+
+Manual deploy flow:
+
+1. Open GitHub Actions and select `Deploy`.
+2. Click `Run workflow`.
+3. Set `image_tag` (for example `main-a1b2c3d` or `1.2.3`).
+4. Run and monitor deployment logs.
+
+### Image tagging behavior
+
+- Pushes to `main` publish `main-<short-sha>` tags.
+- Version tags like `v1.2.3` publish `1.2.3` and `latest`.
+
 ## Coding and Git Rules
 
 This template follows:
@@ -251,6 +383,34 @@ go vet ./...
 make lint
 go test -race -count=1 ./...
 ```
+
+### Branch and commit rules by change type
+
+Use GitHub Flow from `GO_FIBER_PROJECT_GUIDE.md`:
+
+1. Sync `main`.
+2. Create a new branch from `main`.
+3. Commit with Conventional Commits (`<type>(<scope>): <description>`).
+4. Push the branch to origin.
+5. Open a PR, request review, merge, and delete the branch.
+
+Rules for common template change areas:
+
+| Change area | Branch prefix example | Commit message format example |
+|---|---|---|
+| Database wiring or DSN validation | `feature/database-startup-validation` | `feat(config): validate database url at startup` |
+| Cache implementation or key strategy | `feature/cache-invalidation` | `feat(cache): add prefix invalidation for user keys` |
+| Session behavior or auth flow | `feature/admin-session-flow` | `feat(auth): unify admin and api session storage` |
+| Migration tooling or migration files | `chore/migration-tooling` | `chore(migrate): add migrate make targets and cli docs` |
+| Deployment workflow or image publishing | `chore/deploy-workflow` | `chore(ci): document deploy workflow secrets and runbook` |
+| Cron scheduler behavior | `feature/cron-runner-mode` | `feat(cron): add dedicated cron process mode` |
+| Repository layer refactor/fix | `refactor/repository-postgres` | `refactor(repository): align postgres user repository contract` |
+| HTML view/admin UX changes | `feature/admin-views` | `feat(admin): add dashboard view flow documentation` |
+| Observability/metrics/tracing setup | `feature/observability-pipeline` | `feat(observability): document metrics logs and traces flow` |
+| Middleware ordering/security changes | `fix/middleware-order` | `fix(middleware): enforce stable request middleware order` |
+| Documentation-only updates | `docs/readme-runtime-sections` | `docs(readme): add runtime setup and operations sections` |
+
+Prefer small PRs (roughly under 400 changed lines when possible), include a clear description, and link the related issue/ticket when available.
 
 ## FAQ
 
