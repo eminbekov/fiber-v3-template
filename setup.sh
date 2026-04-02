@@ -65,7 +65,7 @@ declare -A MODULE_PATHS=(
   ["console"]="internal/console cmd/console"
   ["generate"]="internal/generate cmd/generate"
   ["k8s"]="deploy/k8s"
-  ["monitoring"]="monitoring"
+  ["monitoring"]="deploy/monitoring"
   ["swagger"]="docs"
 )
 
