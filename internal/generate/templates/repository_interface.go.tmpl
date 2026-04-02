@@ -1,0 +1,16 @@
+package repository
+
+import (
+	"context"
+
+	"{{.ModulePath}}/internal/domain"
+	"github.com/gofrs/uuid/v5"
+)
+
+type {{.EntityName}}Repository interface {
+	FindByID(ctx context.Context, id uuid.UUID) (*domain.{{.EntityName}}, error)
+	List(ctx context.Context, page int, pageSize int) ([]domain.{{.EntityName}}, int64, error)
+	Create(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error
+	Update(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error
+	SoftDelete(ctx context.Context, id uuid.UUID) error
+}

@@ -1,0 +1,110 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"{{.ModulePath}}/internal/cache"
+	"{{.ModulePath}}/internal/domain"
+	"{{.ModulePath}}/internal/repository"
+	"github.com/gofrs/uuid/v5"
+)
+
+const (
+	default{{.EntityName}}Page     = 1
+	default{{.EntityName}}PageSize = 20
+	max{{.EntityName}}PageSize     = 100
+	{{.EntityVariable}}CacheTTL      = 5 * time.Minute
+)
+
+type {{.EntityName}}Service struct {
+	{{.EntityVariable}}Repository repository.{{.EntityName}}Repository
+	cache              cache.Cache
+}
+
+func New{{.EntityName}}Service({{.EntityVariable}}Repository repository.{{.EntityName}}Repository, cache cache.Cache) *{{.EntityName}}Service {
+	return &{{.EntityName}}Service{
+		{{.EntityVariable}}Repository: {{.EntityVariable}}Repository,
+		cache:              cache,
+	}
+}
+
+func (service *{{.EntityName}}Service) FindByID(ctx context.Context, id uuid.UUID) (*domain.{{.EntityName}}, error) {
+	if id == uuid.Nil {
+		return nil, domain.ErrValidation
+	}
+	cacheKey := cache.{{.EntityName}}ByIDKey(id)
+	var cachedEntity domain.{{.EntityName}}
+	if service.cache != nil {
+		if cacheError := service.cache.Get(ctx, cacheKey, &cachedEntity); cacheError == nil {
+			return &cachedEntity, nil
+		}
+	}
+
+	{{.EntityVariable}}, findByIDError := service.{{.EntityVariable}}Repository.FindByID(ctx, id)
+	if findByIDError != nil {
+		return nil, fmt.Errorf("{{.EntityName}}Service.FindByID: %w", findByIDError)
+	}
+	if service.cache != nil {
+		_ = service.cache.Set(ctx, cacheKey, {{.EntityVariable}}, {{.EntityVariable}}CacheTTL)
+	}
+	return {{.EntityVariable}}, nil
+}
+
+func (service *{{.EntityName}}Service) List(ctx context.Context, page int, pageSize int) ([]domain.{{.EntityName}}, int64, error) {
+	if page < 1 {
+		page = default{{.EntityName}}Page
+	}
+	if pageSize < 1 {
+		pageSize = default{{.EntityName}}PageSize
+	}
+	if pageSize > max{{.EntityName}}PageSize {
+		pageSize = max{{.EntityName}}PageSize
+	}
+	entities, totalCount, listError := service.{{.EntityVariable}}Repository.List(ctx, page, pageSize)
+	if listError != nil {
+		return nil, 0, fmt.Errorf("{{.EntityName}}Service.List: %w", listError)
+	}
+	return entities, totalCount, nil
+}
+
+func (service *{{.EntityName}}Service) Create(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error {
+	if {{.EntityVariable}} == nil || strings.TrimSpace({{.EntityVariable}}.Name) == "" {
+		return domain.ErrValidation
+	}
+	if createError := service.{{.EntityVariable}}Repository.Create(ctx, {{.EntityVariable}}); createError != nil {
+		return fmt.Errorf("{{.EntityName}}Service.Create: %w", createError)
+	}
+	if service.cache != nil {
+		_ = service.cache.Delete(ctx, cache.{{.EntityName}}ByIDKey({{.EntityVariable}}.ID))
+	}
+	return nil
+}
+
+func (service *{{.EntityName}}Service) Update(ctx context.Context, {{.EntityVariable}} *domain.{{.EntityName}}) error {
+	if {{.EntityVariable}} == nil || {{.EntityVariable}}.ID == uuid.Nil || strings.TrimSpace({{.EntityVariable}}.Name) == "" {
+		return domain.ErrValidation
+	}
+	if updateError := service.{{.EntityVariable}}Repository.Update(ctx, {{.EntityVariable}}); updateError != nil {
+		return fmt.Errorf("{{.EntityName}}Service.Update: %w", updateError)
+	}
+	if service.cache != nil {
+		_ = service.cache.Delete(ctx, cache.{{.EntityName}}ByIDKey({{.EntityVariable}}.ID))
+	}
+	return nil
+}
+
+func (service *{{.EntityName}}Service) SoftDelete(ctx context.Context, id uuid.UUID) error {
+	if id == uuid.Nil {
+		return domain.ErrValidation
+	}
+	if softDeleteError := service.{{.EntityVariable}}Repository.SoftDelete(ctx, id); softDeleteError != nil {
+		return fmt.Errorf("{{.EntityName}}Service.SoftDelete: %w", softDeleteError)
+	}
+	if service.cache != nil {
+		_ = service.cache.Delete(ctx, cache.{{.EntityName}}ByIDKey(id))
+	}
+	return nil
+}

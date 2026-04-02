@@ -1,0 +1,7 @@
+package cache
+
+import "github.com/gofrs/uuid/v5"
+
+func {{.EntityName}}ByIDKey(id uuid.UUID) string {
+	return "{{.EntityNameLower}}:" + id.String()
+}
