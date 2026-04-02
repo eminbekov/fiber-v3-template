@@ -1,321 +1,274 @@
 # fiber-v3-template
 
-Starter layout for a Go HTTP API using [Fiber v3](https://github.com/gofiber/fiber). This repository will grow as the template is filled out.
+Production-ready Go API template built with [Fiber v3](https://github.com/gofiber/fiber), designed to be installed with a single interactive command and then trimmed to your real project scope.
+
+## Quick Start
+
+```bash
+git clone https://github.com/eminbekov/fiber-v3-template.git my-project
+cd my-project
+./setup.sh
+```
+
+`setup.sh` does all initial setup in terminal:
+
+1. Checks prerequisites (`go`, `git`, optional `docker`, `make`)
+2. Asks your new module path (`github.com/you/project`)
+3. Lets you keep/remove optional modules
+4. Builds your `.env` from prompts
+5. Runs `go mod tidy` and `gofmt`
 
 ## Requirements
 
-- Go 1.26+
+- Go `1.26+` (repo currently uses `1.26.1`)
+- Git
+- Optional for containerized workflows: Docker + Docker Compose
 
-## Project layout
+## One-Command Installer
+
+`setup.sh` is the primary entry point for new users.
+
+### What it changes
+
+- Rewrites module import path from `github.com/eminbekov/fiber-v3-template` to your chosen path
+- Removes optional modules you disable (files + marker blocks)
+- Regenerates `.env` interactively from `.env.example`
+- Cleans dependencies/formatting
+
+### Marker-based removal
+
+Optional code sections are wrapped with:
+
+```go
+// [module:<key>:start]
+// optional code
+// [module:<key>:end]
+```
+
+The installer removes blocks for disabled modules and removes marker comments for enabled modules.
+
+## Optional Module Catalog
+
+| Module | Purpose | Main Paths | Key Env Vars |
+|---|---|---|---|
+| `nats` | Async events, JetStream consumers | `internal/nats`, `internal/nats/consumers` | `NATS_URL` |
+| `grpc` | gRPC server and protobuf contracts | `internal/grpc`, `proto`, `gen` | `GRPC_LISTEN_ADDRESS` |
+| `websocket` | Realtime websocket endpoint | `internal/websocket` | - |
+| `admin` | Admin HTML login/dashboard area | `internal/handler/admin`, `views/admin` | uses session/cookie settings |
+| `web` | Public HTML welcome area | `internal/handler/web`, `views/public` | - |
+| `i18n` | Locale files + language middleware | `internal/i18n`, `internal/middleware/language.go` | - |
+| `storage` | File upload/download and signed URLs | `internal/storage`, `uploads`, `internal/middleware/signed_url.go` | `STORAGE_TYPE`, `S3_*`, `FILE_SIGNING_KEY`, `SIGNED_URL_TTL` |
+| `cron` | Separate cron binary + scheduler wiring | `cmd/cron`, `internal/cron` | - |
+| `monitoring` | Local observability stack configs | `monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
+| `swagger` | Generated OpenAPI docs and route | `docs` | - |
+
+### Manual removal (without installer)
+
+1. Delete module-owned directories/files
+2. Remove module-specific env vars from `.env` / `.env.example`
+3. Remove marker blocks for that module from:
+   - `cmd/server/main.go`
+   - `internal/router/router.go`
+   - `internal/config/config.go`
+   - `Makefile`
+   - `deploy/docker/Dockerfile`
+   - `deploy/docker/docker-compose.yml`
+   - `deploy/docker/docker-compose.dev.yml`
+4. Run:
+
+```bash
+go mod tidy
+gofmt -s -w .
+go build ./...
+make lint
+```
+
+## Project Layout
 
 ```text
 .
-├── cmd/server/          # HTTP server entrypoint (config, logger, graceful shutdown)
-├── cmd/cron/            # Scheduled job runner entrypoint (separate deployment option)
-├── cmd/migrate/         # Database migration CLI entrypoint
-├── deploy/docker/       # Dockerfile and compose manifests
-├── .github/workflows/   # CI and deploy automation
+├── cmd/
+│   ├── server/              # Main HTTP + app wiring
+│   ├── migrate/             # Migration CLI
+│   └── cron/                # Optional cron binary
+├── deploy/docker/           # Dockerfile and compose manifests
 ├── internal/
-│   ├── cron/            # Ticker-based scheduler for periodic jobs
-│   ├── config/          # Typed configuration from environment variables
-│   ├── cache/           # Redis client, cache interface, key builders, cache implementation
-│   ├── database/        # PostgreSQL pool setup and pool registry
-│   ├── domain/          # Sentinel business errors and core domain types
-│   ├── repository/      # Repository interfaces and PostgreSQL implementations
-│   ├── session/         # Optional Redis-backed session store (removable)
-│   ├── dto/response/    # Standard API success/error envelopes
-│   ├── handler/         # Error handler; API v1 (JSON); admin HTML; public HTML (`web/`)
-│   ├── middleware/      # Recovery, metrics, request ID, logging, CORS, Helmet, body limit
-│   ├── storage/         # File storage abstraction (local filesystem, S3-compatible)
-│   └── router/          # Fiber app + middleware and route registration
-├── views/               # HTML templates (public + admin layouts and pages)
-├── migrations/          # Sequential SQL migrations (up/down)
-├── monitoring/          # Prometheus, Loki, Grafana, Tempo, OTEL Collector configs (Docker Compose)
-├── package/
-│   ├── health/          # Reusable liveness and readiness handlers
-│   ├── logger/          # slog setup (JSON in production, text in development)
-│   └── telemetry/       # OpenTelemetry tracer and meter setup
-├── .env.example         # Documented environment variables (copy to .env locally)
-├── AGENTS.md            # Rules for agents and tooling
-├── CONVENTIONS.md       # Contributor coding conventions
-└── README.md
+│   ├── config/              # Env config parsing/validation
+│   ├── database/            # pgx pool and DB helpers
+│   ├── repository/          # Repository interfaces + postgres impl
+│   ├── service/             # Business services
+│   ├── handler/             # API, admin, and web handlers
+│   ├── middleware/          # Request middleware stack
+│   ├── nats/                # Optional NATS module
+│   ├── grpc/                # Optional gRPC module
+│   ├── websocket/           # Optional websocket module
+│   └── storage/             # Optional storage module
+├── migrations/              # SQL migrations
+├── monitoring/              # Optional observability stack configs
+├── views/                   # Optional HTML templates
+├── .env.example
+├── setup.sh
+└── Makefile
 ```
 
 ## Configuration
 
-Copy [`.env.example`](.env.example) to `.env` for local development and adjust values. The application reads the same variables from the process environment (export them or use a tool that loads `.env`).
+Copy `.env.example` to `.env` (or run `./setup.sh` which generates it interactively).
 
 | Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `ENVIRONMENT` | No | `development` | `development` (text logs) or `production` (JSON logs). |
-| `LOG_LEVEL` | No | `debug` | `debug`, `info`, `warn`, or `error`. |
-| `HTTP_LISTEN_ADDRESS` | No | `:8080` | Listen address (for example `:3000` or `127.0.0.1:8080`). |
-| `CORS_ALLOW_ORIGINS` | No | (empty) | Comma-separated list of allowed CORS origins (empty means deny cross-origin browser access). |
-| `BODY_LIMIT` | No | `4194304` | Maximum request body size in bytes (4 MB default). |
-| `OTEL_EXPORTER_ENDPOINT` | No | (empty) | OpenTelemetry collector endpoint (`host:port`). Empty disables telemetry export. |
-| `DATABASE_URL` | Yes | (none) | PostgreSQL connection URL used by the server and migration CLI. |
-| `REDIS_URL` | Yes | (none) | Redis connection URL used for cache and optional session storage. |
-| `NATS_URL` | No | `nats://localhost:4222` | NATS server URL. |
-| `GRPC_LISTEN_ADDRESS` | No | `:9090` | gRPC listen address. |
-| `SESSION_DURATION` | No | `24h` | Session lifetime (Go duration). |
-| `STORAGE_TYPE` | No | `local` | `local` or `s3`. |
-| `STORAGE_LOCAL_BASE_PATH` | No | `./uploads` | Root directory for uploads when `STORAGE_TYPE=local`. |
-| `S3_ENDPOINT` | When `STORAGE_TYPE=s3` | (empty) | Custom endpoint for MinIO; leave empty for AWS S3. |
-| `S3_BUCKET` | When `STORAGE_TYPE=s3` | (none) | Bucket name. |
-| `S3_ACCESS_KEY` | When `STORAGE_TYPE=s3` | (none) | Access key. |
-| `S3_SECRET_KEY` | When `STORAGE_TYPE=s3` | (none) | Secret key. |
-| `S3_REGION` | When `STORAGE_TYPE=s3` | (none) | Region (for example `us-east-1`). |
-| `CDN_BASE_URL` | No | (empty) | Optional public URL prefix for CDN or reverse-proxy (no trailing slash). |
-| `FILE_SIGNING_KEY` | Yes | (none) | Secret for HMAC-signed file URLs (use a long random value in production). |
-| `SIGNED_URL_TTL` | No | `15m` | How long presigned / HMAC download links remain valid (Go duration). |
+|---|---|---|---|
+| `ENVIRONMENT` | No | `development` | `development` or `production` |
+| `LOG_LEVEL` | No | `debug` | `debug`, `info`, `warn`, `error` |
+| `HTTP_LISTEN_ADDRESS` | No | `:8080` | HTTP listen address |
+| `VIEWS_PATH` | If HTML modules enabled | `./views` | Template root path |
+| `CORS_ALLOW_ORIGINS` | No | empty | Comma-separated browser origins |
+| `BODY_LIMIT` | No | `4194304` | Max request body bytes |
+| `OTEL_EXPORTER_ENDPOINT` | No | empty | OTEL collector endpoint (`host:port`) |
+| `DATABASE_URL` | Yes | none | PostgreSQL DSN |
+| `REDIS_URL` | Yes | none | Redis URL |
+| `NATS_URL` | If `nats` enabled | `nats://localhost:4222` | NATS server URL |
+| `GRPC_LISTEN_ADDRESS` | If `grpc` enabled | `:9090` | gRPC bind address |
+| `SESSION_DURATION` | No | `24h` | Session lifetime |
+| `STORAGE_TYPE` | If `storage` enabled | `local` | `local` or `s3` |
+| `STORAGE_LOCAL_BASE_PATH` | If local storage | `./uploads` | Local storage root |
+| `S3_ENDPOINT` | If S3 storage | empty | MinIO/custom endpoint |
+| `S3_BUCKET` | If S3 storage | none | Bucket name |
+| `S3_ACCESS_KEY` | If S3 storage | none | Access key |
+| `S3_SECRET_KEY` | If S3 storage | none | Secret key |
+| `S3_REGION` | If S3 storage | none | Region |
+| `CDN_BASE_URL` | Optional | empty | Public URL prefix |
+| `FILE_SIGNING_KEY` | If storage enabled | none | HMAC key for file links |
+| `SIGNED_URL_TTL` | If storage enabled | `15m` | Signed URL duration |
 
-## Run
+## Development Workflow
+
+### Local run
 
 ```bash
 go run ./cmd/server
 ```
 
-## Docker
-
-Build the app image:
+### Common make targets
 
 ```bash
-make docker-build
+make build
+make run
+make lint
+make migrate-up
+make migrate-down
+make help
 ```
 
-**Full stack (recommended):** builds the app image, starts PostgreSQL, Redis, NATS, the HTTP/gRPC app (with **automatic DB migrations** on container start), and the observability stack (Prometheus, Loki, Promtail, Grafana Tempo, OpenTelemetry Collector, Grafana).
+### Docker workflows
 
-```bash
-make up
-```
-
-Equivalent:
-
-```bash
-docker compose -f deploy/docker/docker-compose.yml up --build -d
-```
-
-Stop everything:
-
-```bash
-make down
-```
-
-Tail all service logs:
-
-```bash
-make logs
-```
-
-Start **only** the observability services (when the app and databases already run elsewhere):
-
-```bash
-make monitoring-up
-```
-
-Stop those services:
-
-```bash
-make monitoring-down
-```
-
-Restart stack without rebuilding images:
-
-```bash
-make docker-up
-```
-
-Start development dependencies only (PostgreSQL, Redis, NATS — **no** app or monitoring):
+Start only dependencies:
 
 ```bash
 make docker-dev
 ```
 
-Stop containers:
+Start full stack:
 
 ```bash
-make docker-down
-make docker-dev-down
+make up
 ```
 
-Run migrations manually inside a running app container (usually not needed — the image entrypoint runs `./migrate up` before `./server`):
+Stop stack:
 
 ```bash
-make docker-migrate
+make down
 ```
 
-### Observability (Compose)
-
-After `make up`, services are available as follows:
-
-| Service | URL | Notes |
-|--------|-----|--------|
-| App HTTP | [http://localhost:8080](http://localhost:8080) | Health: `/health/live`, `/health/ready`, metrics: `/metrics` |
-| Grafana | [http://localhost:3000](http://localhost:3000) | Default login `admin` / `admin` (change in production). |
-| Prometheus | [http://localhost:9090](http://localhost:9090) | UI and `/targets` — scrape target `fiber-v3-template-app`. |
-| Loki | [http://localhost:3100](http://localhost:3100) | Log store; query via Grafana Explore. |
-| Tempo | [http://localhost:3200](http://localhost:3200) | Trace backend; explore traces in Grafana. |
-
-Data flow (see `GO_FIBER_PROJECT_GUIDE.md` §19.3):
-
-- **Logs:** app stdout (JSON in production) → Promtail → Loki → Grafana.
-- **Metrics:** Prometheus scrapes `http://app:8080/metrics` → Grafana.
-- **Traces:** app exports OTLP gRPC to `otel-collector:4317` (set `OTEL_EXPORTER_ENDPOINT` in Compose) → Tempo → Grafana.
-
-Configuration files live under [`monitoring/`](monitoring/).
-
-Cron worker (separate process):
+Tail logs:
 
 ```bash
-go run ./cmd/cron
+make logs
 ```
 
-With overrides:
+## Architecture Overview
 
-```bash
-ENVIRONMENT=production \
-LOG_LEVEL=info \
-HTTP_LISTEN_ADDRESS=:3000 \
-CORS_ALLOW_ORIGINS=https://example.com,https://admin.example.com \
-BODY_LIMIT=4194304 \
-OTEL_EXPORTER_ENDPOINT=localhost:4317 \
-REDIS_URL=redis://localhost:6379/0 \
-go run ./cmd/server
+```mermaid
+flowchart LR
+    client[Client] --> httpApp[FiberHTTP]
+    httpApp --> middleware[MiddlewareStack]
+    middleware --> router[Router]
+    router --> handlers[Handlers]
+    handlers --> services[Services]
+    services --> repositories[Repositories]
+    repositories --> postgres[(PostgreSQL)]
+    services --> redis[(Redis)]
+    services --> nats[NATS]
+    grpcClient[gRPCClient] --> grpcServer[gRPCServer]
+    grpcServer --> services
 ```
-
-## Database setup
-
-Install PostgreSQL locally (or run it in Docker), then provide `DATABASE_URL`.
-
-Example:
-
-```bash
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/fiber_template?sslmode=disable"
-```
-
-The HTTP server validates `DATABASE_URL` on startup and fails fast if it is missing or invalid.
-
-## Cache and sessions
-
-- `internal/cache/cache.go` defines the cache contract used by services.
-- `internal/cache/redis.go` provides the Redis implementation with `Get`, `Set`, `Delete`, and prefix invalidation.
-- `internal/cache/keys.go` centralizes typed cache key builders to avoid string typos.
-- `internal/service/user_service.go` now uses cache-aside reads and invalidates stale keys after writes.
-- `internal/session/` backs login sessions for both the JSON API and the admin HTML flow (Redis); the admin UI uses a `session_token` cookie that references the same session store as API Bearer tokens.
-
-## Migrations
-
-The project includes `cmd/migrate` and root `Makefile` targets for database schema lifecycle.
-
-```bash
-# apply pending migrations
-make migrate-up
-
-# rollback last migration (or set N=2, N=3, ...)
-make migrate-down
-
-# create the next sequential migration files
-make migrate-create NAME=create_orders
-```
-
-You can also run the CLI directly:
-
-```bash
-go run ./cmd/migrate up
-go run ./cmd/migrate down 1
-go run ./cmd/migrate version
-go run ./cmd/migrate force 1
-```
-
-## CI/CD
-
-The repository includes GitHub Actions workflows:
-
-- `.github/workflows/ci.yml` runs lint, tests, swagger generation checks, and Docker build/push on push events.
-- `.github/workflows/deploy.yml` provides manual production deployment via `workflow_dispatch`.
-
-Image tagging behavior:
-
-- Pushes to `main` publish `main-<short-sha>` tags.
-- Version tags like `v1.2.3` publish `1.2.3` and `latest`.
-
-## Deployment Setup (Template Reuse)
-
-`deploy.yml` is a reusable template. Configure these repository secrets before using manual deploy:
-
-- `SERVER_HOST` - target server hostname or IP
-- `SERVER_USER` - SSH username
-- `SSH_PRIVATE_KEY` - private key for SSH auth
-- `APP_DIR` - absolute path to the app directory on the server
-
-Server prerequisites:
-
-- Docker and Docker Compose installed
-- repository deployed on the server with `deploy/docker/docker-compose.yml` available
-
-Manual deploy flow:
-
-1. Open GitHub Actions and select the `Deploy` workflow.
-2. Click `Run workflow`.
-3. Enter `image_tag` (for example `main-a1b2c3d` or `1.2.3`).
-4. Run and monitor deployment logs.
-
-## Cron / scheduled jobs
-
-- In-process mode is wired in `cmd/server/main.go` and runs jobs under the same `errgroup` cancellation context as HTTP, gRPC, and consumers.
-- Separate mode is available in `cmd/cron/main.go` for production deployments where cron should run only once across multiple app instances.
-- Jobs are registered through `internal/cron/scheduler.go` with structured start/completion/failure logging and graceful stop via `context.Context`.
-
-Useful commands:
-
-```bash
-make build-cron
-make run-cron
-```
-
-## Repository layer
-
-- `internal/repository/user_repository.go` defines the data access contract.
-- `internal/repository/postgres/user.go` provides the PostgreSQL implementation with `pgx/v5`.
-- The server wires repositories in `cmd/server/main.go` and injects them via `router.Dependencies`.
-- Readiness (`/health/ready`) now includes a PostgreSQL ping checker.
-
-## HTML views (public site and admin)
-
-Server-rendered pages use `html/template` under `views/`. Two layout families:
-
-| Area | Layout | Handlers | Notes |
-|------|--------|----------|--------|
-| **Public (end-user)** | `layouts/public.html`, `views/public/` | `internal/handler/web` | Landing page at `/`. |
-| **Admin** | `layouts/base.html`, `layouts/auth.html`, `views/admin/` | `internal/handler/admin` | Sign-in at `/admin/login` (form); dashboard at `/admin/dashboard`. |
-
-**Admin browser sessions:** after a successful `POST /admin/login`, the server sets an HttpOnly cookie `session_token` (SameSite=Lax; `Secure` in production). Protected admin routes read this cookie via `middleware.NewAdminAuthenticate`. The JSON API under `/api/v1` continues to use `Authorization: Bearer <token>` from `POST /api/v1/auth/login` (`middleware.NewAuthenticate`).
 
 ## Endpoints
 
-- `GET /` — public welcome page (HTML)
-- `GET /admin/login`, `POST /admin/login` — admin sign-in form (HTML); sets session cookie on success
-- `POST /admin/logout` — ends admin session (requires admin cookie)
-- `GET /admin/dashboard` — admin dashboard (HTML; requires admin cookie)
-- `GET /health/live`, `GET /health/ready` — liveness and readiness probes
-- `GET /metrics` — Prometheus metrics endpoint
-- `GET /api/v1/ping` — versioned API scaffold endpoint
-- `POST /api/v1/files` — multipart upload (authenticated; requires `files:create` for manager role after migration `000005`)
-- `GET /api/files/:filename` — download when `token` and `expires` HMAC query parameters are valid
+- `GET /health/live`
+- `GET /health/ready`
+- `GET /metrics`
+- `GET /api/v1/ping`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/users`
+- `GET /api/v1/users`
+- `GET /api/v1/users/:id`
+- `PUT /api/v1/users/:id`
+- `DELETE /api/v1/users/:id`
+- `POST /api/v1/files` (storage module)
+- `GET /api/files/:filename` (storage module)
+- `GET /ws` (websocket module)
+- `GET /admin/login`, `POST /admin/login`, `POST /admin/logout`, `GET /admin/dashboard` (admin module)
+- `GET /swagger/*` (swagger module, non-production)
 
-## Observability
+## CI/CD
 
-- **Health checks:** `GET /health/live` and `GET /health/ready` return typed JSON health responses.
-- **Metrics:** `GET /metrics` exposes Prometheus metrics including request totals, request durations, and in-flight requests.
-- **Tracing/metrics export:** set `OTEL_EXPORTER_ENDPOINT` to enable OTLP gRPC export for OpenTelemetry providers. Keep it empty to run with no-op export.
+GitHub Actions:
 
-## Middleware stack
+- `.github/workflows/ci.yml`:
+  - lint
+  - tests
+  - swagger generation check
+  - image build/push on push events
+- `.github/workflows/deploy.yml`:
+  - manual deploy workflow (`workflow_dispatch`)
 
-Registered in this order:
-1. Recovery middleware (panic protection with stack-trace logging)
-2. Prometheus metrics middleware
-3. Request ID middleware (`X-Request-ID`)
-4. Structured request logging middleware (`slog`)
-5. Helmet security headers middleware
-6. CORS middleware (configurable allowlist)
-7. Body limit enforcement middleware
+## Coding and Git Rules
+
+This template follows:
+
+- `GO_FIBER_PROJECT_GUIDE.md` (architecture, coding, testing, git practices)
+- `AGENTS.md` (project-specific implementation rules)
+- `CONVENTIONS.md` (coding conventions)
+
+Minimum pre-push local checks:
+
+```bash
+gofmt -s -w .
+go mod tidy
+go build ./...
+go vet ./...
+make lint
+go test -race -count=1 ./...
+```
+
+## FAQ
+
+### Can I remove modules after setup?
+
+Yes. Re-run from a fresh branch and remove by marker key/path ownership, then run `go mod tidy`, `go build`, and `make lint`.
+
+### How do I add a migration?
+
+```bash
+make migrate-create NAME=create_orders
+make migrate-up
+```
+
+### Do I need Docker?
+
+No. You can run locally with native PostgreSQL/Redis/NATS and `go run ./cmd/server`.
+
+### Can I use this as a minimal API template?
+
+Yes. Disable HTML, gRPC, websocket, monitoring, storage, and NATS during `./setup.sh` to keep only API-focused components.
