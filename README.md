@@ -60,6 +60,7 @@ The installer removes blocks for disabled modules and removes marker comments fo
 | `storage` | File upload/download and signed URLs | `internal/storage`, `uploads`, `internal/middleware/signed_url.go` | `STORAGE_TYPE`, `S3_*`, `FILE_SIGNING_KEY`, `SIGNED_URL_TTL` |
 | `cron` | Separate cron binary + scheduler wiring | `cmd/cron`, `internal/cron` | - |
 | `console` | Console CLI admin commands | `cmd/console`, `internal/console` | `DATABASE_URL`, `REDIS_URL` |
+| `generate` | Code generator CLI (migrations and resource scaffolding) | `cmd/generate`, `internal/generate` | - |
 | `monitoring` | Local observability stack configs | `monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
 | `swagger` | Generated OpenAPI docs and route | `docs` | - |
 
@@ -92,6 +93,7 @@ make lint
 │   ├── server/              # Main HTTP + app wiring
 │   ├── migrate/             # Migration CLI
 │   ├── console/             # Optional console CLI commands
+│   ├── generate/            # Optional code generator CLI
 │   └── cron/                # Optional cron binary
 ├── deploy/docker/           # Dockerfile and compose manifests
 ├── internal/
@@ -179,6 +181,9 @@ make create-admin   # Create admin user from CLI
 make assign-role    # Assign role from CLI
 make cache-clear    # Clear Redis cache (prefix/all)
 make export-users   # Export users to CSV
+make build-generate # Build code generator binary
+make generate-migration NAME=create_orders
+make generate-resource NAME=order
 make help           # List all available targets
 ```
 
@@ -319,6 +324,30 @@ make create-admin USERNAME=admin PASSWORD=secret PHONE=+1234567890
 make assign-role USER_ID=<UUID> ROLE=admin
 make cache-clear
 make export-users OUTPUT=users.csv
+```
+
+### Code Generator
+
+- Generator entrypoint: `cmd/generate/main.go`.
+- Templates are versioned in `internal/generate/templates/` and rendered via `text/template` + `embed`.
+- Safe generation: `--dry-run` previews output; existing files are protected unless `--force` is passed.
+
+Useful commands:
+
+```bash
+go run ./cmd/generate migration create_orders
+go run ./cmd/generate resource order
+go run ./cmd/generate resource order --dry-run
+go run ./cmd/generate resource order --force
+go run ./cmd/generate resource order --with-handler=false --with-service=false
+```
+
+With Makefile shortcuts:
+
+```bash
+make build-generate
+make generate-migration NAME=create_orders
+make generate-resource NAME=order
 ```
 
 ### HTML views (public and admin)
