@@ -139,11 +139,11 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 14 — Testing and hardening
 
-- Unit tests for services and pure domain (guide §23.1).
-- Integration tests with real Postgres/Redis in CI (guide §23.2).
-- Fuzz tests for parsers/validators where valuable (guide §23.3).
-- `govulncheck` / `gosec` in CI (guide §28 `security` target, §25).
-- Review NASA P10 rules for critical paths (guide §24).
+- [x] Unit tests for services and pure domain (guide §23.1).
+- [x] Integration tests with real Postgres/Redis in CI (guide §23.2).
+- [x] Fuzz tests for parsers/validators where valuable (guide §23.3).
+- [x] `govulncheck` / `gosec` in CI (guide §28 `security` target, §25).
+- [x] Review NASA P10 rules for critical paths (guide §24).
 
 ---
 
