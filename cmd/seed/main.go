@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	"github.com/eminbekov/fiber-v3-template/package/hasher"
 )
@@ -41,7 +43,7 @@ func run() error {
 }
 
 type seedablePool interface {
-	Exec(ctx context.Context, sql string, arguments ...any) (any, error)
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 }
 
 func seedDevelopmentData(ctx context.Context, pool seedablePool) error {
