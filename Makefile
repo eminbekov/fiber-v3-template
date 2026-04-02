@@ -7,6 +7,9 @@ CRON_MAIN_PATH := cmd/cron/main.go
 # [module:console:start]
 CONSOLE_MAIN_PATH := cmd/console/main.go
 # [module:console:end]
+# [module:generate:start]
+GENERATE_MAIN_PATH := cmd/generate/main.go
+# [module:generate:end]
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
 DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
@@ -56,6 +59,20 @@ cache-clear: ## Clear Redis cache (optional: make cache-clear PREFIX=user:)
 export-users: ## Export users to CSV (optional: make export-users OUTPUT=users.csv)
 	go run $(CONSOLE_MAIN_PATH) export-users $(if $(OUTPUT),--output=$(OUTPUT))
 # [module:console:end]
+
+# [module:generate:start]
+.PHONY: build-generate
+build-generate: ## Build the code generator binary
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/generate $(GENERATE_MAIN_PATH)
+
+.PHONY: generate-migration
+generate-migration: ## Create migration stubs (make generate-migration NAME=create_orders)
+	go run $(GENERATE_MAIN_PATH) migration $(NAME)
+
+.PHONY: generate-resource
+generate-resource: ## Scaffold CRUD resource (make generate-resource NAME=order)
+	go run $(GENERATE_MAIN_PATH) resource $(NAME)
+# [module:generate:end]
 
 # --- Development ---
 .PHONY: tidy
