@@ -90,7 +90,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ../../monitoring/prometheus:/etc/prometheus
+      - ../monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     depends_on:
       app:
@@ -102,14 +102,14 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ../../monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml
+      - ../monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml
       - loki_data:/loki
 
   promtail:
     image: grafana/promtail:3.4.2
     command: ["-config.file=/etc/promtail/config.yml"]
     volumes:
-      - ../../monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - ../monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       loki:
@@ -121,7 +121,7 @@ services:
     ports:
       - "3200:3200"
     volumes:
-      - ../../monitoring/tempo/tempo-config.yml:/etc/tempo/tempo-config.yml
+      - ../monitoring/tempo/tempo-config.yml:/etc/tempo/tempo-config.yml
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.115.1
@@ -130,7 +130,7 @@ services:
       - "4317:4317"
       - "4318:4318"
     volumes:
-      - ../../monitoring/otel-collector/otel-collector-config.yml:/etc/otel-collector-config.yml
+      - ../monitoring/otel-collector/otel-collector-config.yml:/etc/otel-collector-config.yml
     depends_on:
       tempo:
         condition: service_started
@@ -144,8 +144,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - ../../monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ../../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
       - grafana_data:/var/lib/grafana
     depends_on:
       prometheus:
