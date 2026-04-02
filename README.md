@@ -17,6 +17,8 @@ cd my-project
 3. Lets you keep/remove optional modules
 4. Builds your `.env` from prompts
 5. Runs `go mod tidy` and `gofmt`
+6. Removes template git history and remote origin, initializes fresh repository
+7. Optionally configures a new git remote origin
 
 ## Requirements
 
@@ -34,6 +36,8 @@ cd my-project
 - Removes optional modules you disable (files + marker blocks)
 - Regenerates `.env` interactively from `.env.example`
 - Cleans dependencies/formatting
+- Removes template `.git` directory and reinitializes a fresh repository (default) or removes the template remote origin if you choose to keep history
+- Prompts for a new git remote origin URL so your project points to the correct repository
 
 ### Marker-based removal
 
@@ -527,8 +531,9 @@ Use GitHub Flow:
 1. Sync `main`.
 2. Create a new branch from `main`.
 3. Commit with Conventional Commits (`<type>(<scope>): <description>`).
-4. Push the branch to origin.
-5. Open a PR, request review, merge, and delete the branch.
+4. Run `make verify` before pushing to catch lint and test failures early.
+5. Push the branch to origin.
+6. Open a PR, request review, merge, and delete the branch.
 
 Rules for common template change areas:
 
@@ -545,6 +550,7 @@ Rules for common template change areas:
 | Observability/metrics/tracing setup | `feature/observability-pipeline` | `feat(observability): document metrics logs and traces flow` |
 | Middleware ordering/security changes | `fix/middleware-order` | `fix(middleware): enforce stable request middleware order` |
 | Documentation-only updates | `docs/readme-runtime-sections` | `docs(readme): add runtime setup and operations sections` |
+| Setup script or installer changes | `fix/setup-git-cleanup` | `fix(setup): remove template git origin on clone` |
 
 Prefer small PRs (roughly under 400 changed lines when possible), include a clear description, and link the related issue/ticket when available.
 

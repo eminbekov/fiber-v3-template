@@ -9,6 +9,8 @@ Rules for automated tools and contributors working on **fiber-v3-template**. Ali
 - Use [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`.
   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
   - Example: `feat(config): add environment validation`.
+- Run `make verify` (fmt, tidy, build, vet, lint, test) before every push.
+- Push the branch to origin and open a pull request; do not merge locally.
 
 ## Imports
 

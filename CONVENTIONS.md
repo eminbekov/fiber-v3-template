@@ -117,3 +117,5 @@ group.Go(func() error {
 - Branch from `main`, open a pull request, keep changes reviewable.
 - Conventional Commits for all messages: `<type>(<scope>): <description>`.
 - Keep PRs under 400 changed lines when possible.
+- Run `make verify` before every push to catch lint, vet, and test failures early.
+- Never commit directly to `main`; all changes go through pull requests.
