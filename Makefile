@@ -35,6 +35,40 @@ tidy: ## Tidy go module files
 lint: ## Run linter
 	golangci-lint run ./...
 
+.PHONY: vet
+vet: ## Run go vet checks
+	go vet ./...
+
+.PHONY: test
+test: ## Run all tests with race detector
+	go test -race -count=1 ./...
+
+.PHONY: test-verbose
+test-verbose: ## Run tests with verbose output
+	go test -race -count=1 -v ./...
+
+.PHONY: test-cover
+test-cover: ## Run tests with coverage report
+	go test -race -count=1 -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+.PHONY: test-integration
+test-integration: ## Run integration tests
+	go test -race -count=1 -run Integration ./...
+
+.PHONY: bench
+bench: ## Run benchmarks
+	go test -bench=. -benchmem ./...
+
+.PHONY: fuzz
+fuzz: ## Run fuzz tests for 30 seconds
+	go test -fuzz=. -fuzztime=30s ./...
+
+.PHONY: security
+security: ## Run security scanners
+	govulncheck ./...
+	gosec ./...
+
 .PHONY: migrate-up
 migrate-up: ## Run pending migrations
 	go run $(MIGRATE_MAIN_PATH) up
