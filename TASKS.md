@@ -149,8 +149,8 @@ Work through phases in order unless noted. Each checkbox is a concrete deliverab
 
 ## Phase 15 — Makefile and developer ergonomics
 
-- `Makefile`: build, run, fmt, tidy, test, lint, migrate up/down/create, swagger, proto, docker, help (guide §28).
-- `make help` as default goal with discoverable targets.
+- [x] `Makefile`: build, run, fmt, tidy, test, lint, migrate up/down/create, swagger, proto, docker, help (guide §28).
+- [x] `make help` as default goal with discoverable targets.
 
 ---
 
