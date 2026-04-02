@@ -85,6 +85,16 @@ security: ## Run security scanners
 	govulncheck ./...
 	gosec ./...
 
+.PHONY: verify
+verify: ## Run full pre-push verification sequence (fmt, tidy, build, vet, lint, test)
+	$(MAKE) fmt
+	$(MAKE) tidy
+	go build ./...
+	$(MAKE) vet
+	$(MAKE) lint
+	$(MAKE) test
+	@echo "All pre-push checks passed"
+
 # --- Database ---
 .PHONY: migrate-up
 migrate-up: ## Run pending migrations
