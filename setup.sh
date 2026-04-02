@@ -306,17 +306,41 @@ maybe_remove_template_files() {
   fi
 }
 
-maybe_reinitialize_git() {
+setup_git_repository() {
   local reinitialize_answer
-  read -r -p "Reinitialize git history for a fresh project? [y/N]: " reinitialize_answer
-  reinitialize_answer="${reinitialize_answer:-n}"
+  local new_remote_url
 
-  if [[ "${reinitialize_answer,,}" == "y" || "${reinitialize_answer,,}" == "yes" ]]; then
-    rm -rf .git
+  print_section "Git Setup"
+
+  if [[ -d ".git" ]]; then
+    read -r -p "Reinitialize git history for a fresh project? [Y/n]: " reinitialize_answer
+    reinitialize_answer="${reinitialize_answer:-y}"
+
+    if [[ "${reinitialize_answer,,}" == "y" || "${reinitialize_answer,,}" == "yes" ]]; then
+      rm -rf .git
+      git init
+      git add -A
+      git commit -m "feat: initialize project from fiber-v3-template"
+      log_info "Removed template git history and initialized fresh repository"
+    else
+      if git remote get-url origin >/dev/null 2>&1; then
+        local current_origin
+        current_origin="$(git remote get-url origin)"
+        git remote remove origin
+        log_info "Removed template remote origin (${current_origin})"
+      fi
+    fi
+  else
     git init
     git add -A
     git commit -m "feat: initialize project from fiber-v3-template"
-    log_info "Initialized new git history"
+    log_info "Initialized new git repository"
+  fi
+
+  read -r -p "New git remote origin URL (leave empty to skip): " new_remote_url
+  if [[ -n "${new_remote_url}" ]]; then
+    git remote add origin "${new_remote_url}"
+    log_info "Configured remote origin: ${new_remote_url}"
   fi
 }
 
@@ -375,7 +399,7 @@ main() {
   build_env_file
   run_finalize_commands
   maybe_remove_template_files
-  maybe_reinitialize_git
+  setup_git_repository
   print_next_steps
   maybe_remove_setup_script
 }
