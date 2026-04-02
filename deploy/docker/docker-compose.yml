@@ -20,7 +20,9 @@ services:
       OTEL_EXPORTER_ENDPOINT: otel-collector:4317
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
       REDIS_URL: redis://redis:6379/0
+      # [module:nats:start]
       NATS_URL: nats://nats:4222
+      # [module:nats:end]
       SESSION_DURATION: 24h
       STORAGE_TYPE: local
       STORAGE_LOCAL_BASE_PATH: ./uploads
@@ -33,12 +35,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # [module:nats:start]
       nats:
         condition: service_started
+      # [module:nats:end]
+      # [module:monitoring:start]
       tempo:
         condition: service_started
       otel-collector:
         condition: service_started
+      # [module:monitoring:end]
 
   postgres:
     image: postgres:18.3-alpine3.23
@@ -66,12 +72,15 @@ services:
       timeout: 3s
       retries: 5
 
+  # [module:nats:start]
   nats:
     image: nats:2.12.6-alpine
     command: ["--jetstream"]
     ports:
       - "4222:4222"
+  # [module:nats:end]
 
+  # [module:monitoring:start]
   prometheus:
     image: prom/prometheus:v3.1.0
     command:
@@ -145,10 +154,13 @@ services:
         condition: service_started
       tempo:
         condition: service_started
+  # [module:monitoring:end]
 
 volumes:
   postgres_data:
   uploads_data:
+  # [module:monitoring:start]
   prometheus_data:
   loki_data:
   grafana_data:
+  # [module:monitoring:end]

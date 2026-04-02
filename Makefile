@@ -1,7 +1,9 @@
 APP_NAME := server
 BUILD_DIR := bin
 SERVER_MAIN_PATH := cmd/server/main.go
+# [module:cron:start]
 CRON_MAIN_PATH := cmd/cron/main.go
+# [module:cron:end]
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
 DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
@@ -15,6 +17,7 @@ build: ## Build the HTTP server binary
 run: ## Run the HTTP server
 	go run $(SERVER_MAIN_PATH)
 
+# [module:cron:start]
 .PHONY: build-cron
 build-cron: ## Build the cron binary
 	CGO_ENABLED=0 go build -o $(BUILD_DIR)/cron $(CRON_MAIN_PATH)
@@ -22,6 +25,7 @@ build-cron: ## Build the cron binary
 .PHONY: run-cron
 run-cron: ## Run the cron binary
 	go run $(CRON_MAIN_PATH)
+# [module:cron:end]
 
 .PHONY: tidy
 tidy: ## Tidy go module files
@@ -43,6 +47,7 @@ migrate-down: ## Roll back migration steps (default 1)
 migrate-create: ## Create a new migration (usage: make migrate-create NAME=create_orders)
 	migrate create -ext sql -dir migrations -seq $(NAME)
 
+# [module:swagger:start]
 .PHONY: swagger
 swagger: ## Generate Swagger docs from handler annotations
 	swag init -g cmd/server/main.go -o docs --parseInternal --parseDependency
@@ -50,12 +55,15 @@ swagger: ## Generate Swagger docs from handler annotations
 .PHONY: swagger-fmt
 swagger-fmt: ## Format Swagger annotations
 	swag fmt
+# [module:swagger:end]
 
+# [module:grpc:start]
 .PHONY: proto
 proto: ## Generate Go code from protobuf definitions
 	protoc --go_out=gen --go_opt=paths=source_relative \
 	       --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
 	       proto/**/**/*.proto
+# [module:grpc:end]
 
 .PHONY: docker-build
 docker-build: ## Build application Docker image
@@ -73,6 +81,7 @@ down: ## Stop full Docker Compose stack
 logs: ## Tail logs for all Compose services
 	docker compose -f $(DOCKER_COMPOSE_PATH) logs -f
 
+# [module:monitoring:start]
 .PHONY: monitoring-up
 monitoring-up: ## Start observability services only (Prometheus, Loki, Promtail, Tempo, OTEL Collector, Grafana)
 	docker compose -f $(DOCKER_COMPOSE_PATH) up -d prometheus loki promtail tempo otel-collector grafana
@@ -80,6 +89,7 @@ monitoring-up: ## Start observability services only (Prometheus, Loki, Promtail,
 .PHONY: monitoring-down
 monitoring-down: ## Stop observability services only
 	docker compose -f $(DOCKER_COMPOSE_PATH) stop prometheus loki promtail tempo otel-collector grafana
+# [module:monitoring:end]
 
 .PHONY: docker-up
 docker-up: ## Start full application stack with Docker Compose (no rebuild)
