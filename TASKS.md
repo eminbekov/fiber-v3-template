@@ -236,6 +236,16 @@ Full observability stack per guide §19.2–§19.3 and §20.2 (see `README.md` D
 
 ---
 
+## Phase 21 — One-command installer and modular template shaping
+
+- [x] Add module boundary markers (`[module:<key>:start/end]`) in application wiring files for removable modules.
+- [x] Add `setup.sh` interactive installer for module path replacement, module selection, marker stripping, and `.env` generation.
+- [x] Make optional module ownership explicit in docs so end-users can safely delete unused features.
+- [x] Add hard pre-push local verification sequence (`gofmt`, `go mod tidy`, `go build`, `go vet`, `make lint`, tests).
+- [x] Ensure branch-per-change workflow with PR creation and merge aligns with guide §22.
+
+---
+
 ### How to use this file
 
 1. Pick the next unchecked item in the earliest incomplete phase.

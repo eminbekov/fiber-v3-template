@@ -45,3 +45,11 @@ Group imports in three blocks separated by blank lines:
 ## Secrets
 
 - Never read, commit, or paste contents of `.env`. Use `.env.example` for documented variable names only.
+
+## Optional module markers
+
+- Optional feature blocks are wrapped with marker comments: `// [module:<key>:start]` and `// [module:<key>:end]`.
+- Marker keys currently used: `nats`, `grpc`, `websocket`, `admin`, `web`, `i18n`, `storage`, `cron`, `monitoring`, `swagger`, `views`.
+- The installer script `setup.sh` uses these markers to remove disabled modules safely.
+- When adding a new removable feature, mark imports, config fields, wiring blocks, routes, and infra snippets consistently.
+- Keep marker blocks statement-scoped; do not wrap partial expressions.
