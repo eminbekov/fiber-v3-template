@@ -85,7 +85,7 @@ jobs:
   swagger:
     name: Swagger
     runs-on: ubuntu-latest
-    needs: test
+    needs: security
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -100,6 +100,23 @@ jobs:
         run: make swagger
       - name: Verify swagger docs are up to date
         run: git diff --exit-code docs/
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Run govulncheck
+        run: govulncheck ./...
 
   build:
     name: Build and Push Image
