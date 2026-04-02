@@ -4,6 +4,9 @@ SERVER_MAIN_PATH := cmd/server/main.go
 # [module:cron:start]
 CRON_MAIN_PATH := cmd/cron/main.go
 # [module:cron:end]
+# [module:console:start]
+CONSOLE_MAIN_PATH := cmd/console/main.go
+# [module:console:end]
 MIGRATE_MAIN_PATH := cmd/migrate/main.go
 DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
@@ -31,6 +34,28 @@ build-cron: ## Build the cron binary
 run-cron: ## Run the cron binary
 	go run $(CRON_MAIN_PATH)
 # [module:cron:end]
+
+# [module:console:start]
+.PHONY: build-console
+build-console: ## Build the console CLI binary
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/console $(CONSOLE_MAIN_PATH)
+
+.PHONY: create-admin
+create-admin: ## Create admin user (make create-admin USERNAME=x PASSWORD=x PHONE=x)
+	go run $(CONSOLE_MAIN_PATH) create-admin --username=$(USERNAME) --password=$(PASSWORD) --phone=$(PHONE)
+
+.PHONY: assign-role
+assign-role: ## Assign role to user (make assign-role USER_ID=... ROLE=admin)
+	go run $(CONSOLE_MAIN_PATH) assign-role --user-id=$(USER_ID) --role=$(ROLE)
+
+.PHONY: cache-clear
+cache-clear: ## Clear Redis cache (optional: make cache-clear PREFIX=user:)
+	go run $(CONSOLE_MAIN_PATH) cache-clear $(if $(PREFIX),--prefix=$(PREFIX))
+
+.PHONY: export-users
+export-users: ## Export users to CSV (optional: make export-users OUTPUT=users.csv)
+	go run $(CONSOLE_MAIN_PATH) export-users $(if $(OUTPUT),--output=$(OUTPUT))
+# [module:console:end]
 
 # --- Development ---
 .PHONY: tidy
