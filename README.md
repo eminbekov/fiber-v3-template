@@ -321,6 +321,7 @@ Monitoring configuration is stored under `monitoring/`.
 - `GET /api/v1/users/:id`
 - `PUT /api/v1/users/:id`
 - `DELETE /api/v1/users/:id`
+- `GET /` (public welcome page, web module)
 - `POST /api/v1/files` (storage module)
 - `GET /api/files/:filename` (storage module)
 - `GET /ws` (websocket module)
