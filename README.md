@@ -61,6 +61,7 @@ The installer removes blocks for disabled modules and removes marker comments fo
 | `cron` | Separate cron binary + scheduler wiring | `cmd/cron`, `internal/cron` | - |
 | `console` | Console CLI admin commands | `cmd/console`, `internal/console` | `DATABASE_URL`, `REDIS_URL` |
 | `generate` | Code generator CLI (migrations and resource scaffolding) | `cmd/generate`, `internal/generate` | - |
+| `k8s` | Kubernetes manifests and Envoy WAF filter | `deploy/k8s` | - |
 | `monitoring` | Local observability stack configs | `monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
 | `swagger` | Generated OpenAPI docs and route | `docs` | - |
 
@@ -96,6 +97,7 @@ make lint
 │   ├── generate/            # Optional code generator CLI
 │   └── cron/                # Optional cron binary
 ├── deploy/docker/           # Dockerfile and compose manifests
+├── deploy/k8s/              # Optional Kubernetes manifests and EnvoyFilter
 ├── internal/
 │   ├── config/              # Env config parsing/validation
 │   ├── database/            # pgx pool and DB helpers
@@ -184,6 +186,9 @@ make export-users   # Export users to CSV
 make build-generate # Build code generator binary
 make generate-migration NAME=create_orders
 make generate-resource NAME=order
+make k8s-dry-run   # Validate Kubernetes manifests
+make k8s-apply     # Apply Kubernetes manifests
+make k8s-delete    # Delete Kubernetes resources
 make help           # List all available targets
 ```
 
@@ -255,6 +260,33 @@ Tail logs:
 ```bash
 make logs
 ```
+
+### Kubernetes workflows
+
+Validate manifests before applying:
+
+```bash
+make k8s-dry-run
+```
+
+Apply manifests:
+
+```bash
+make k8s-apply
+```
+
+Delete deployed resources:
+
+```bash
+make k8s-delete
+```
+
+`deploy/k8s/` includes:
+
+- Namespace, ConfigMap, Secret template, Deployment, Service, Ingress, and HPA
+- `EnvoyFilter` with Lua-based WAF checks for path traversal, SQL injection, XSS, scanner user agents, SSRF targets, and oversized payloads
+
+For production, replace placeholder values in `deploy/k8s/secret.yaml` with base64-encoded secrets and set ingress host/TLS values for your domain.
 
 ## Architecture Overview
 
