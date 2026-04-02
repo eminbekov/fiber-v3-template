@@ -273,13 +273,76 @@ apply_module_selection() {
   fi
 }
 
+DATABASE_NAME=""
+DATABASE_USER=""
+DATABASE_PASSWORD=""
+DATABASE_HOST=""
+DATABASE_PORT=""
+REDIS_HOST=""
+REDIS_PORT=""
+
+collect_database_config() {
+  local default_database_name
+  default_database_name="$(printf '%s' "${new_module_path##*/}" | tr '-' '_')"
+
+  print_section "Database Configuration"
+  read -r -p "$(printf "%-30s [%s]: " "Database name" "${default_database_name}")" DATABASE_NAME
+  DATABASE_NAME="${DATABASE_NAME:-${default_database_name}}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Database user" "postgres")" DATABASE_USER
+  DATABASE_USER="${DATABASE_USER:-postgres}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Database password" "postgres")" DATABASE_PASSWORD
+  DATABASE_PASSWORD="${DATABASE_PASSWORD:-postgres}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Database host" "localhost")" DATABASE_HOST
+  DATABASE_HOST="${DATABASE_HOST:-localhost}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Database port" "5432")" DATABASE_PORT
+  DATABASE_PORT="${DATABASE_PORT:-5432}"
+
+  log_info "Database: ${DATABASE_USER}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}"
+}
+
+collect_redis_config() {
+  print_section "Redis Configuration"
+  read -r -p "$(printf "%-30s [%s]: " "Redis host" "localhost")" REDIS_HOST
+  REDIS_HOST="${REDIS_HOST:-localhost}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Redis port" "6379")" REDIS_PORT
+  REDIS_PORT="${REDIS_PORT:-6379}"
+
+  log_info "Redis: ${REDIS_HOST}:${REDIS_PORT}"
+}
+
+assembled_database_url() {
+  printf 'postgres://%s:%s@%s:%s/%s?sslmode=disable' \
+    "${DATABASE_USER}" "${DATABASE_PASSWORD}" "${DATABASE_HOST}" "${DATABASE_PORT}" "${DATABASE_NAME}"
+}
+
+assembled_redis_url() {
+  printf 'redis://%s:%s/0' "${REDIS_HOST}" "${REDIS_PORT}"
+}
+
+propagate_database_config_to_docker_compose() {
+  local compose_file="$1"
+  if [[ ! -f "${compose_file}" ]]; then
+    return
+  fi
+  replace_in_file "${compose_file}" "fiber_template" "${DATABASE_NAME}"
+  replace_in_file "${compose_file}" "POSTGRES_USER: postgres" "POSTGRES_USER: ${DATABASE_USER}"
+  replace_in_file "${compose_file}" "POSTGRES_PASSWORD: postgres" "POSTGRES_PASSWORD: ${DATABASE_PASSWORD}"
+  replace_in_file "${compose_file}" "pg_isready -U postgres" "pg_isready -U ${DATABASE_USER}"
+}
+
 build_env_file() {
   local line_value
   local variable_name
   local default_value
   local user_value
+  local assembled_value
 
-  print_section "Environment Setup"
+  print_section "Environment Setup (remaining variables)"
   : > "${ENV_FILE}"
 
   while IFS= read -r line_value || [[ -n "${line_value}" ]]; do
@@ -291,10 +354,28 @@ build_env_file() {
     variable_name="${line_value%%=*}"
     default_value="${line_value#*=}"
 
+    case "${variable_name}" in
+      DATABASE_URL)
+        assembled_value="$(assembled_database_url)"
+        printf "%s=%s\n" "${variable_name}" "${assembled_value}" >> "${ENV_FILE}"
+        log_info "DATABASE_URL assembled from database configuration"
+        continue
+        ;;
+      REDIS_URL)
+        assembled_value="$(assembled_redis_url)"
+        printf "%s=%s\n" "${variable_name}" "${assembled_value}" >> "${ENV_FILE}"
+        log_info "REDIS_URL assembled from redis configuration"
+        continue
+        ;;
+    esac
+
     read -r -p "$(printf "%-30s [%s]: " "${variable_name}" "${default_value}")" user_value
     user_value="${user_value:-${default_value}}"
     printf "%s=%s\n" "${variable_name}" "${user_value}" >> "${ENV_FILE}"
   done < "${ENV_EXAMPLE_FILE}"
+
+  propagate_database_config_to_docker_compose "deploy/docker/docker-compose.yml"
+  propagate_database_config_to_docker_compose "deploy/docker/docker-compose.dev.yml"
 
   log_info "Created ${ENV_FILE}"
 }
@@ -418,6 +499,8 @@ main() {
   replace_module_path "${new_module_path}"
   select_modules
   apply_module_selection
+  collect_database_config
+  collect_redis_config
   build_env_file
   run_finalize_commands
   maybe_remove_template_files
