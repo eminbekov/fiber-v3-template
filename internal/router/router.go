@@ -6,19 +6,19 @@ import (
 	_ "github.com/eminbekov/fiber-v3-template/docs"
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/config"
-	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	appHandler "github.com/eminbekov/fiber-v3-template/internal/handler"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
 	v1 "github.com/eminbekov/fiber-v3-template/internal/handler/api/v1"
+	"github.com/eminbekov/fiber-v3-template/internal/handler/web"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
 	appwebsocket "github.com/eminbekov/fiber-v3-template/internal/websocket"
 	"github.com/eminbekov/fiber-v3-template/package/health"
+	"github.com/gofiber/contrib/v3/swaggo"
 	fiberwebsocket "github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/template/html/v2"
 )
 
@@ -31,6 +31,7 @@ type Dependencies struct {
 	AuthorizationService *service.AuthorizationService
 	AdminAuthHandler     *admin.AdminAuthHandler
 	DashboardHandler     *admin.DashboardHandler
+	WelcomeHandler       *web.WelcomeHandler
 	Translator           *i18n.Translator
 	Cache                cache.Cache
 	FileService          *service.FileService
@@ -40,10 +41,6 @@ type Dependencies struct {
 
 // New builds the Fiber application with routes and middleware (expand per GO_FIBER_PROJECT_GUIDE.md).
 func New(applicationConfiguration *config.Config, dependencies Dependencies) *fiber.App {
-	type RootResponse struct {
-		Name string `json:"name"`
-	}
-
 	templateEngine := html.New(applicationConfiguration.ViewsPath, ".html")
 	templateEngine.AddFunc("formatDate", func(value time.Time) string {
 		return value.Format("2006-01-02 15:04")
@@ -78,13 +75,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		application.Get("/swagger/*", swaggo.HandlerDefault)
 	}
 
-	application.Get("/", func(context fiber.Ctx) error {
-		return context.JSON(response.Response{
-			Data: RootResponse{
-				Name: "fiber-v3-template",
-			},
-		})
-	})
+	application.Get("/", dependencies.WelcomeHandler.Index)
 	adminGroup.Get("/dashboard", dashboardHandler.Index)
 	adminGroup.Post("/logout", adminAuthHandler.Logout)
 	apiV1Group.Get("/ping", apiV1Handler.Ping)

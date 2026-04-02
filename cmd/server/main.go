@@ -18,6 +18,7 @@ import (
 	"github.com/eminbekov/fiber-v3-template/internal/database"
 	internalgrpc "github.com/eminbekov/fiber-v3-template/internal/grpc"
 	"github.com/eminbekov/fiber-v3-template/internal/handler/admin"
+	"github.com/eminbekov/fiber-v3-template/internal/handler/web"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	appnats "github.com/eminbekov/fiber-v3-template/internal/nats"
 	"github.com/eminbekov/fiber-v3-template/internal/nats/consumers"
@@ -182,6 +183,7 @@ func wireApplication(
 		return nil, fmt.Errorf("translator: %w", translatorError)
 	}
 	dashboardHandler := admin.NewDashboardHandler(translator)
+	welcomeHandler := web.NewWelcomeHandler(translator)
 	secureSessionCookie := applicationConfiguration.Environment == "production"
 	adminAuthHandler := admin.NewAdminAuthHandler(
 		authService,
@@ -201,7 +203,8 @@ func wireApplication(
 	routerDependencies := router.Dependencies{
 		UserRepository: userRepository, RoleRepository: roleRepository, PermissionRepository: permissionRepository,
 		UserService: userService, AuthService: authService, AuthorizationService: authorizationService,
-		AdminAuthHandler: adminAuthHandler, DashboardHandler: dashboardHandler, Translator: translator, Cache: applicationCache,
+		AdminAuthHandler: adminAuthHandler, DashboardHandler: dashboardHandler, WelcomeHandler: welcomeHandler,
+		Translator: translator, Cache: applicationCache,
 		FileService: fileService, WebSocketHub: webSocketHub,
 		HealthCheckers: []health.Checker{
 			health.NewDatabaseChecker("postgres", databasePool.Ping),
