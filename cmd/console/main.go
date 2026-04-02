@@ -72,6 +72,11 @@ func runConsole(ctx context.Context, commandName string, arguments []string) err
 			return fmt.Errorf("console assign-role: %w", assignRoleError)
 		}
 		return nil
+	case "cache-clear":
+		if cacheClearError := commands.CacheClear(ctx, dependencies, arguments); cacheClearError != nil {
+			return fmt.Errorf("console cache-clear: %w", cacheClearError)
+		}
+		return nil
 	default:
 		printUsage()
 		return fmt.Errorf("unknown command: %s", commandName)
@@ -84,4 +89,5 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "Commands:")
 	fmt.Fprintln(os.Stderr, "  create-admin   Create an admin user")
 	fmt.Fprintln(os.Stderr, "  assign-role    Assign role to user")
+	fmt.Fprintln(os.Stderr, "  cache-clear    Clear redis cache (optionally by prefix)")
 }
