@@ -12,6 +12,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/cron ./cmd/cron
 # [module:console:start]
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/console ./cmd/console
 # [module:console:end]
+# [module:generate:start]
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/generate ./cmd/generate
+# [module:generate:end]
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/migrate ./cmd/migrate
 
 FROM alpine:3.23.3
@@ -26,6 +29,9 @@ COPY --from=builder /app/cron ./cron
 # [module:console:start]
 COPY --from=builder /app/console ./console
 # [module:console:end]
+# [module:generate:start]
+COPY --from=builder /app/generate ./generate
+# [module:generate:end]
 COPY --from=builder /app/migrate ./migrate
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/views ./views
