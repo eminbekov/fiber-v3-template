@@ -29,6 +29,7 @@ type Dependencies struct {
 	UserService          *service.UserService
 	AuthService          *service.AuthService
 	AuthorizationService *service.AuthorizationService
+	AdminAuthHandler     *admin.AdminAuthHandler
 	DashboardHandler     *admin.DashboardHandler
 	Translator           *i18n.Translator
 	Cache                cache.Cache
@@ -62,9 +63,13 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 	webSocketHandler := appwebsocket.NewHandler(dependencies.WebSocketHub)
 	dashboardHandler := dependencies.DashboardHandler
 	healthHandler := health.NewHandler(dependencies.HealthCheckers...)
+	adminAuthHandler := dependencies.AdminAuthHandler
+	application.Get("/admin/login", adminAuthHandler.LoginPage)
+	application.Post("/admin/login", adminAuthHandler.Login)
+
 	apiV1Group := application.Group("/api/v1")
-	adminGroup := application.Group("/admin", middleware.NewAdminAuthenticate(dependencies.AuthService))
 	protectedAPIGroup := apiV1Group.Group("", middleware.NewAuthenticate(dependencies.AuthService))
+	adminGroup := application.Group("/admin", middleware.NewAdminAuthenticate(dependencies.AuthService))
 
 	application.Get("/health/live", healthHandler.Liveness)
 	application.Get("/health/ready", healthHandler.Readiness)
@@ -81,6 +86,7 @@ func New(applicationConfiguration *config.Config, dependencies Dependencies) *fi
 		})
 	})
 	adminGroup.Get("/dashboard", dashboardHandler.Index)
+	adminGroup.Post("/logout", adminAuthHandler.Logout)
 	apiV1Group.Get("/ping", apiV1Handler.Ping)
 	apiV1Group.Post("/auth/login", authHandler.Login)
 	protectedAPIGroup.Post("/auth/logout", authHandler.Logout)
