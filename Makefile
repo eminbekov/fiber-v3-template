@@ -1,5 +1,6 @@
 APP_NAME := server
 BUILD_DIR := bin
+COMPOSE_PROJECT_NAME := $(notdir $(CURDIR))
 SERVER_MAIN_PATH := cmd/server/main.go
 # [module:cron:start]
 CRON_MAIN_PATH := cmd/cron/main.go
@@ -199,53 +200,53 @@ docker-build: ## Build application Docker image
 
 .PHONY: up
 up: ## Build and start full stack (app, Postgres, Redis, NATS, observability)
-	docker compose -f $(DOCKER_COMPOSE_PATH) up --build -d
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) up --build -d
 
 .PHONY: down
 down: ## Stop full Docker Compose stack
-	docker compose -f $(DOCKER_COMPOSE_PATH) down
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) down
 
 .PHONY: logs
 logs: ## Tail logs for all Compose services
-	docker compose -f $(DOCKER_COMPOSE_PATH) logs -f
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) logs -f
 
 # [module:monitoring:start]
 .PHONY: monitoring-up
 monitoring-up: ## Start observability services only (Prometheus, Loki, Promtail, Tempo, OTEL Collector, Grafana)
-	docker compose -f $(DOCKER_COMPOSE_PATH) up -d prometheus loki promtail tempo otel-collector grafana
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) up -d prometheus loki promtail tempo otel-collector grafana
 
 .PHONY: monitoring-down
 monitoring-down: ## Stop observability services only
-	docker compose -f $(DOCKER_COMPOSE_PATH) stop prometheus loki promtail tempo otel-collector grafana
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) stop prometheus loki promtail tempo otel-collector grafana
 # [module:monitoring:end]
 
 .PHONY: docker-up
 docker-up: ## Start full application stack with Docker Compose (no rebuild)
-	docker compose -f $(DOCKER_COMPOSE_PATH) up -d
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) up -d
 
 .PHONY: docker-down
 docker-down: ## Stop full application stack with Docker Compose
-	docker compose -f $(DOCKER_COMPOSE_PATH) down
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) down
 
 .PHONY: docker-dev
 docker-dev: ## Start development dependencies only (Postgres, Redis, NATS)
-	docker compose -f $(DOCKER_COMPOSE_DEV_PATH) up -d
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_DEV_PATH) up -d
 
 .PHONY: docker-dev-down
 docker-dev-down: ## Stop development dependencies
-	docker compose -f $(DOCKER_COMPOSE_DEV_PATH) down
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_DEV_PATH) down
 
 .PHONY: docker-logs
 docker-logs: ## Tail full stack container logs
-	docker compose -f $(DOCKER_COMPOSE_PATH) logs -f
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) logs -f
 
 .PHONY: docker-ps
 docker-ps: ## Show full stack container status
-	docker compose -f $(DOCKER_COMPOSE_PATH) ps
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) ps
 
 .PHONY: docker-migrate
 docker-migrate: ## Run database migrations inside app container
-	docker compose -f $(DOCKER_COMPOSE_PATH) exec app ./migrate up
+	docker compose -p $(COMPOSE_PROJECT_NAME) -f $(DOCKER_COMPOSE_PATH) exec app ./migrate up
 
 .PHONY: docker-health
 docker-health: ## Check server health endpoints
