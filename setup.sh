@@ -20,6 +20,7 @@ readonly MODULE_KEYS=(
   "cron"
   "console"
   "generate"
+  "k8s"
   "monitoring"
   "swagger"
   "views"
@@ -47,6 +48,7 @@ declare -A MODULE_DESCRIPTIONS=(
   ["cron"]="Dedicated cron binary and in-app scheduler wiring"
   ["console"]="Console CLI admin commands (create-admin, assign-role, cache-clear, export-users)"
   ["generate"]="Code generator CLI (migration stubs, CRUD resource scaffolding)"
+  ["k8s"]="Kubernetes manifests and Envoy WAF EnvoyFilter"
   ["monitoring"]="Prometheus/Loki/Tempo/Grafana compose services"
   ["swagger"]="Generated OpenAPI docs and Swagger route"
 )
@@ -62,6 +64,7 @@ declare -A MODULE_PATHS=(
   ["cron"]="internal/cron cmd/cron"
   ["console"]="internal/console cmd/console"
   ["generate"]="internal/generate cmd/generate"
+  ["k8s"]="deploy/k8s"
   ["monitoring"]="monitoring"
   ["swagger"]="docs"
 )

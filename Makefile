@@ -14,6 +14,9 @@ MIGRATE_MAIN_PATH := cmd/migrate/main.go
 DOCKERFILE_PATH := deploy/docker/Dockerfile
 DOCKER_COMPOSE_PATH := deploy/docker/docker-compose.yml
 DOCKER_COMPOSE_DEV_PATH := deploy/docker/docker-compose.dev.yml
+# [module:k8s:start]
+K8S_MANIFESTS_PATH := deploy/k8s
+# [module:k8s:end]
 
 # --- Build ---
 .PHONY: build
@@ -73,6 +76,20 @@ generate-migration: ## Create migration stubs (make generate-migration NAME=crea
 generate-resource: ## Scaffold CRUD resource (make generate-resource NAME=order)
 	go run $(GENERATE_MAIN_PATH) resource $(NAME)
 # [module:generate:end]
+
+# [module:k8s:start]
+.PHONY: k8s-apply
+k8s-apply: ## Apply all Kubernetes manifests
+	kubectl apply -f $(K8S_MANIFESTS_PATH)/
+
+.PHONY: k8s-delete
+k8s-delete: ## Delete all Kubernetes resources
+	kubectl delete -f $(K8S_MANIFESTS_PATH)/
+
+.PHONY: k8s-dry-run
+k8s-dry-run: ## Validate Kubernetes manifests (dry run)
+	kubectl apply --dry-run=client -f $(K8S_MANIFESTS_PATH)/
+# [module:k8s:end]
 
 # --- Development ---
 .PHONY: tidy
