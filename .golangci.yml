@@ -1,15 +1,15 @@
 version: "2"
 
+# NEVER remove linters from this file. Fix the code instead.
+
 run:
   timeout: 5m
 
 linters:
   enable:
-    # golangci-lint v2 removed standalone gosimple/typecheck toggles.
-    # Equivalent checks are covered by staticcheck and govet.
     - errcheck
     - govet
-    - staticcheck
+    - staticcheck     # includes gosimple rules (merged in golangci-lint v2)
     - unused
     - ineffassign
     - gocritic
