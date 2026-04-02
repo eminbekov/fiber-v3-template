@@ -59,6 +59,7 @@ The installer removes blocks for disabled modules and removes marker comments fo
 | `i18n` | Locale files + language middleware | `internal/i18n`, `internal/middleware/language.go` | - |
 | `storage` | File upload/download and signed URLs | `internal/storage`, `uploads`, `internal/middleware/signed_url.go` | `STORAGE_TYPE`, `S3_*`, `FILE_SIGNING_KEY`, `SIGNED_URL_TTL` |
 | `cron` | Separate cron binary + scheduler wiring | `cmd/cron`, `internal/cron` | - |
+| `console` | Console CLI admin commands | `cmd/console`, `internal/console` | `DATABASE_URL`, `REDIS_URL` |
 | `monitoring` | Local observability stack configs | `monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
 | `swagger` | Generated OpenAPI docs and route | `docs` | - |
 
@@ -90,6 +91,7 @@ make lint
 ├── cmd/
 │   ├── server/              # Main HTTP + app wiring
 │   ├── migrate/             # Migration CLI
+│   ├── console/             # Optional console CLI commands
 │   └── cron/                # Optional cron binary
 ├── deploy/docker/           # Dockerfile and compose manifests
 ├── internal/
@@ -172,6 +174,11 @@ make verify         # Full pre-push check sequence
 make test           # Run tests with race detector
 make migrate-up     # Apply pending migrations
 make migrate-down   # Roll back last migration
+make build-console  # Build console binary
+make create-admin   # Create admin user from CLI
+make assign-role    # Assign role from CLI
+make cache-clear    # Clear Redis cache (prefix/all)
+make export-users   # Export users to CSV
 make help           # List all available targets
 ```
 
@@ -288,6 +295,30 @@ Useful commands:
 ```bash
 make build-cron
 make run-cron
+```
+
+### Console CLI
+
+- Console entrypoint: `cmd/console/main.go`.
+- Commands reuse existing repositories/services with shared config, database pool, and Redis wiring.
+
+Useful commands:
+
+```bash
+go run ./cmd/console create-admin --username=admin --password=secret --phone=+1234567890
+go run ./cmd/console assign-role --user-id=<UUID> --role=admin
+go run ./cmd/console cache-clear
+go run ./cmd/console cache-clear --prefix=user:
+go run ./cmd/console export-users --output=users.csv
+```
+
+With Makefile shortcuts:
+
+```bash
+make create-admin USERNAME=admin PASSWORD=secret PHONE=+1234567890
+make assign-role USER_ID=<UUID> ROLE=admin
+make cache-clear
+make export-users OUTPUT=users.csv
 ```
 
 ### HTML views (public and admin)
