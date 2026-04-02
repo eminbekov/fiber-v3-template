@@ -353,6 +353,28 @@ maybe_remove_setup_script() {
 
 run_finalize_commands() {
   print_section "Finalize"
+
+  if command -v goimports >/dev/null 2>&1; then
+    goimports -w .
+    log_info "Ran goimports (removed unused imports)"
+  else
+    log_warning "goimports not found; installing golang.org/x/tools/cmd/goimports@latest"
+    go install golang.org/x/tools/cmd/goimports@latest
+    if command -v goimports >/dev/null 2>&1; then
+      goimports -w .
+      log_info "Ran goimports (removed unused imports)"
+    else
+      local gobin_path
+      gobin_path="$(go env GOPATH)/bin/goimports"
+      if [[ -x "${gobin_path}" ]]; then
+        "${gobin_path}" -w .
+        log_info "Ran goimports from GOPATH (removed unused imports)"
+      else
+        log_warning "goimports unavailable after install attempt; unused imports may remain"
+      fi
+    fi
+  fi
+
   go mod tidy
   gofmt -s -w .
   log_info "Ran go mod tidy and gofmt"
@@ -399,9 +421,9 @@ main() {
   build_env_file
   run_finalize_commands
   maybe_remove_template_files
+  maybe_remove_setup_script
   setup_git_repository
   print_next_steps
-  maybe_remove_setup_script
 }
 
 main "$@"
