@@ -1,0 +1,77 @@
+name: Bug report
+description: Report unexpected behavior or a regression
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. **Security issues** must not be reported here — use [Security advisories](https://github.com/eminbekov/fiber-v3-template/security/advisories/new) and [SECURITY.md](https://github.com/eminbekov/fiber-v3-template/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what went wrong.
+      placeholder: "Example: POST /api/v1/login returns 500 when password contains a specific character."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you thought should happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead (error message, status code, stack trace if server-side and safe to share).
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps so someone else can reproduce the issue. Include HTTP method, path, and body shape if relevant.
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Go version (if building from source)
+      description: Output of `go version` or "N/A".
+      placeholder: "go version go1.26.1 …"
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or tag
+      description: SHA or tag you built from (helps bisect).
+      placeholder: "main @ abc1234 or v1.0.0"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Docker vs bare metal, relevant env vars (redact secrets).
+      placeholder: "macOS 15, Docker Compose, PostgreSQL 16, Redis 7"
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have read CONTRIBUTING.md and searched existing issues for duplicates
+          required: true
+        - label: This is not a security vulnerability (if it is, use the advisory flow instead)
+          required: true

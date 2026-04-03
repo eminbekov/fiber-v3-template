@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/eminbekov/fiber-v3-template/security/advisories/new
+    about: Report security issues privately (do not use public issues). See SECURITY.md.
+  - name: General question
+    url: https://github.com/eminbekov/fiber-v3-template/discussions
+    about: Ask the community in Discussions if you are unsure whether something is a bug.

@@ -271,6 +271,6 @@ By contributing, you agree that your contributions are licensed under the same t
 
 ## Questions
 
-Use [GitHub Discussions](https://github.com/eminbekov/fiber-v3-template/discussions) for general questions, or open an issue when you have a concrete bug report or feature proposal (issue templates help standardize fields once they exist in `.github`).
+Use [GitHub Discussions](https://github.com/eminbekov/fiber-v3-template/discussions) for general questions, or open an issue when you have a concrete bug report or feature proposal. Choose the appropriate form under [`.github/ISSUE_TEMPLATE/`](./.github/ISSUE_TEMPLATE/) so maintainers get structured fields.
 
 Thank you again for helping improve this template.

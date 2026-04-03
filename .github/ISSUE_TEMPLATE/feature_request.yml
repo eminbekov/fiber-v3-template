@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an idea or improvement for the template
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is a **production-oriented Go + Fiber v3 template**. Proposals should fit that scope (clarity, optional modules, operability). Large design changes are easier after a short discussion in [Discussions](https://github.com/eminbekov/fiber-v3-template/discussions).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What limitation or pain point does this address? Who benefits?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or documentation you want. Links to prior art are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to solve the same problem, and why you prefer your proposal.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Impact on optional modules / setup.sh
+      description: Does this touch marker blocks, `setup.sh`, or `.env.example`? If unsure, say "unknown".
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have read CONTRIBUTING.md and searched existing issues and discussions
+          required: true
