@@ -4,8 +4,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 )
 
 var dtoValidator = validator.New()

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 func toGRPCError(err error) error {

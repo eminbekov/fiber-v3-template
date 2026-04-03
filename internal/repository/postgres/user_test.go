@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 func TestUserRepository_CreateAndFindByID(testingContext *testing.T) {

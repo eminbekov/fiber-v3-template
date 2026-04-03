@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
-	"github.com/gofiber/fiber/v3"
 )
 
 func ErrorHandler(ctx fiber.Ctx, err error) error {

@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/middleware"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
-	"github.com/gofiber/fiber/v3"
 )
 
 // AdminAuthHandler serves HTML login and logout for the admin panel (cookie session).

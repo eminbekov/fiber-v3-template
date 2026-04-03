@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	requestDTO "github.com/eminbekov/fiber-v3-template/internal/dto/request"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	responseV1 "github.com/eminbekov/fiber-v3-template/internal/dto/response/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
-	"github.com/gofiber/fiber/v3"
-	"github.com/gofrs/uuid/v5"
 )
 
 type UserHandler struct {

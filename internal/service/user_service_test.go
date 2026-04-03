@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
-	"github.com/gofrs/uuid/v5"
 )
 
 func TestUserService_FindByID(testingContext *testing.T) {

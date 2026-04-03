@@ -3,10 +3,11 @@ package grpc
 import (
 	"fmt"
 
-	"github.com/eminbekov/fiber-v3-template/gen/proto/user/v1"
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/eminbekov/fiber-v3-template/gen/proto/user/v1"
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 func domainUserToProto(domainUser *domain.User) *userv1.User {

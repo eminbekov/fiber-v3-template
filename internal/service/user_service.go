@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
-	"github.com/gofrs/uuid/v5"
 )
 
 const (

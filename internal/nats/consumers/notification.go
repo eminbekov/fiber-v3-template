@@ -7,8 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	appnats "github.com/eminbekov/fiber-v3-template/internal/nats"
 	"github.com/nats-io/nats.go/jetstream"
+
+	appnats "github.com/eminbekov/fiber-v3-template/internal/nats"
 )
 
 type NotificationConsumer struct {

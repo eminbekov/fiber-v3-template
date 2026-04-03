@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 const sessionTokenLengthBytes = 32
