@@ -34,4 +34,4 @@ Use **Conventional Commits**: `type(scope): description` (e.g. `fix(api): return
 
 ## Where this is documented
 
-[CONTRIBUTING.md](../../CONTRIBUTING.md), [AGENTS.md](../../AGENTS.md), and [GO_FIBER_PROJECT_GUIDE.md](../../GO_FIBER_PROJECT_GUIDE.md) section 22.
+[CONTRIBUTING.md](../../CONTRIBUTING.md) and [AGENTS.md](../../AGENTS.md).

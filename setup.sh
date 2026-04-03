@@ -381,8 +381,8 @@ build_env_file() {
 }
 
 maybe_remove_template_files() {
-  if ask_yes_no_default_yes "Remove template-only docs (GO_FIBER_PROJECT_GUIDE.md, TASKS.md)?"; then
-    rm -f GO_FIBER_PROJECT_GUIDE.md TASKS.md
+  if ask_yes_no_default_yes "Remove template-only docs (TASKS.md)?"; then
+    rm -f TASKS.md
     log_info "Removed template-only docs"
   fi
 }

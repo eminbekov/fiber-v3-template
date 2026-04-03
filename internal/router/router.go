@@ -65,7 +65,7 @@ type Dependencies struct {
 	HealthCheckers []health.Checker
 }
 
-// New builds the Fiber application with routes and middleware (expand per GO_FIBER_PROJECT_GUIDE.md).
+// New builds the Fiber application with routes and middleware (extend per ARCHITECTURE.md and project conventions).
 func New(applicationConfiguration *config.Config, dependencies Dependencies) *fiber.App {
 	// [module:views:start]
 	templateEngine := html.New(applicationConfiguration.ViewsPath, ".html")
