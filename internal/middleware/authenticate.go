@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
-	"github.com/gofiber/fiber/v3"
 )
 
 func NewAuthenticate(authService *service.AuthService) fiber.Handler {

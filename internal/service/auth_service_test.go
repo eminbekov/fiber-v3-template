@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/session"
-	"github.com/gofrs/uuid/v5"
 )
 
 func TestAuthService_Login(testingContext *testing.T) {

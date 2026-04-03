@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
-	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
+	"github.com/eminbekov/fiber-v3-template/internal/repository"
 )
 
 type roleRepository struct {

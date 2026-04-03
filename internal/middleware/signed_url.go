@@ -3,9 +3,10 @@ package middleware
 import (
 	"strconv"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	"github.com/eminbekov/fiber-v3-template/internal/storage"
-	"github.com/gofiber/fiber/v3"
 )
 
 // NewSignedURLValidator ensures ?token and ?expires match the HMAC for :filename.

@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eminbekov/fiber-v3-template/internal/storage"
 	"github.com/gofrs/uuid/v5"
+
+	"github.com/eminbekov/fiber-v3-template/internal/storage"
 )
 
 type FileService struct {

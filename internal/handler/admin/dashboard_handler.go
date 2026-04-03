@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/gofiber/fiber/v3"
+
+	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 )
 
 type DashboardHandler struct {

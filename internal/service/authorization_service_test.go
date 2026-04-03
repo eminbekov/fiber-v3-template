@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/cache"
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
-	"github.com/gofrs/uuid/v5"
 )
 
 func TestAuthorizationService_HasPermission(testingContext *testing.T) {

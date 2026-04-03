@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
 )
 
 func TestRoleRepository_CreateAndFind(testingContext *testing.T) {

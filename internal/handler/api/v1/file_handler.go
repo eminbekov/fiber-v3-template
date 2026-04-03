@@ -3,13 +3,14 @@ package v1
 import (
 	"fmt"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	requestDTO "github.com/eminbekov/fiber-v3-template/internal/dto/request"
 	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	responseV1 "github.com/eminbekov/fiber-v3-template/internal/dto/response/v1"
 	"github.com/eminbekov/fiber-v3-template/internal/i18n"
 	"github.com/eminbekov/fiber-v3-template/internal/service"
-	"github.com/gofiber/fiber/v3"
 )
 
 type FileHandler struct {

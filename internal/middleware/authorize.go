@@ -3,10 +3,11 @@ package middleware
 import (
 	"log/slog"
 
-	"github.com/eminbekov/fiber-v3-template/internal/domain"
-	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofrs/uuid/v5"
+
+	"github.com/eminbekov/fiber-v3-template/internal/domain"
+	"github.com/eminbekov/fiber-v3-template/internal/service"
 )
 
 func RequirePermission(

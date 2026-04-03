@@ -5,11 +5,12 @@ import (
 	"io"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"github.com/eminbekov/fiber-v3-template/internal/domain"
 	"github.com/eminbekov/fiber-v3-template/internal/repository"
 	"github.com/eminbekov/fiber-v3-template/internal/session"
 	"github.com/eminbekov/fiber-v3-template/internal/storage"
-	"github.com/gofrs/uuid/v5"
 )
 
 var (

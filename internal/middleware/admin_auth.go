@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eminbekov/fiber-v3-template/internal/service"
 	"github.com/gofiber/fiber/v3"
+
+	"github.com/eminbekov/fiber-v3-template/internal/service"
 )
 
 // SessionCookieName is the HTTP cookie name that stores the session token for browser admin flows.

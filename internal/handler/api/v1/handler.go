@@ -3,8 +3,9 @@ package v1
 import (
 	"fmt"
 
-	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 	"github.com/gofiber/fiber/v3"
+
+	"github.com/eminbekov/fiber-v3-template/internal/dto/response"
 )
 
 type Handler struct{}
