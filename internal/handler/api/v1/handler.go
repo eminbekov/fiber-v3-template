@@ -25,10 +25,10 @@ func NewHandler() *Handler {
 // @Tags         Health
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  response.Response
+// @Success      200  {object}  response.Response[PingResponse]
 // @Router       /v1/ping [get]
 func (handler *Handler) Ping(ctx fiber.Ctx) error {
-	if jsonError := ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response[PingResponse]{
 		Data: PingResponse{
 			Name:    "fiber-v3-template",
 			Version: "v1",

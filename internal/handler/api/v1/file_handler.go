@@ -33,7 +33,7 @@ func NewFileHandler(fileService *service.FileService, translator *i18n.Translato
 // @Produce      json
 // @Param        file  formData  file    true  "File to upload"
 // @Param        note  formData  string  false "Optional note"
-// @Success      201   {object}  response.Response
+// @Success      201   {object}  response.Response[responseV1.FileResponse]
 // @Failure      400   {object}  response.ErrorResponse
 // @Failure      401   {object}  response.ErrorResponse
 // @Failure      403   {object}  response.ErrorResponse
@@ -85,7 +85,7 @@ func (handler *FileHandler) Upload(ctx fiber.Ctx) error {
 		contentType = "application/octet-stream"
 	}
 
-	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response{
+	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response[responseV1.FileResponse]{
 		Data: responseV1.NewFileResponse(objectKey, signedURL, publicURL, contentType),
 	}); jsonError != nil {
 		return fmt.Errorf("fileHandler.Upload: %w", jsonError)

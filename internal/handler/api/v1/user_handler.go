@@ -34,7 +34,7 @@ func NewUserHandler(userService *service.UserService, translator *i18n.Translato
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requestDTO.CreateUserRequest  true  "Create user request"
-// @Success      201   {object}  response.Response
+// @Success      201   {object}  response.Response[responseV1.UserResponse]
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
 // @Failure      403   {object}  response.ErrorResponse  "Forbidden"
@@ -74,7 +74,7 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 		return fmt.Errorf("userHandler.Create: %w", createError)
 	}
 
-	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response{
+	if jsonError := ctx.Status(fiber.StatusCreated).JSON(response.Response[responseV1.UserResponse]{
 		Data: responseV1.NewUserResponse(*user),
 	}); jsonError != nil {
 		return fmt.Errorf("userHandler.Create: %w", jsonError)
@@ -90,7 +90,7 @@ func (handler *UserHandler) Create(ctx fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "User ID"
-// @Success      200  {object}  response.Response
+// @Success      200  {object}  response.Response[responseV1.UserResponse]
 // @Failure      400  {object}  response.ErrorResponse  "Invalid ID"
 // @Failure      401  {object}  response.ErrorResponse  "Unauthorized"
 // @Failure      403  {object}  response.ErrorResponse  "Forbidden"
@@ -118,7 +118,7 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 		return fmt.Errorf("userHandler.FindByID: %w", findByIDError)
 	}
 
-	if jsonError := ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response[responseV1.UserResponse]{
 		Data: responseV1.NewUserResponse(*user),
 	}); jsonError != nil {
 		return fmt.Errorf("userHandler.FindByID: %w", jsonError)
@@ -135,7 +135,7 @@ func (handler *UserHandler) FindByID(ctx fiber.Ctx) error {
 // @Produce      json
 // @Param        page       query     int  false  "Page number"      default(1)
 // @Param        page_size  query     int  false  "Items per page"   default(20)
-// @Success      200        {object}  response.Response
+// @Success      200        {object}  response.Response[responseV1.UserListResponse]
 // @Failure      400        {object}  response.ErrorResponse  "Validation error"
 // @Failure      401        {object}  response.ErrorResponse  "Unauthorized"
 // @Failure      403        {object}  response.ErrorResponse  "Forbidden"
@@ -180,7 +180,7 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 		return fmt.Errorf("userHandler.List: %w", listError)
 	}
 
-	if jsonError := ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response[responseV1.UserListResponse]{
 		Data: responseV1.NewUserListResponse(users, totalCount, request.Page, request.PageSize),
 	}); jsonError != nil {
 		return fmt.Errorf("userHandler.List: %w", jsonError)
@@ -197,7 +197,7 @@ func (handler *UserHandler) List(ctx fiber.Ctx) error {
 // @Produce      json
 // @Param        id    path      string                       true  "User ID"
 // @Param        body  body      requestDTO.UpdateUserRequest true  "Update user request"
-// @Success      200   {object}  response.Response
+// @Success      200   {object}  response.Response[responseV1.UserResponse]
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
 // @Failure      403   {object}  response.ErrorResponse  "Forbidden"
@@ -260,7 +260,7 @@ func (handler *UserHandler) Update(ctx fiber.Ctx) error {
 		return fmt.Errorf("userHandler.Update: %w", findByIDError)
 	}
 
-	if jsonError := ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response[responseV1.UserResponse]{
 		Data: responseV1.NewUserResponse(*updatedUser),
 	}); jsonError != nil {
 		return fmt.Errorf("userHandler.Update: %w", jsonError)
