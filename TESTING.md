@@ -43,6 +43,16 @@ make security
 
 CI runs them in order: unit -> fuzz -> integration -> benchmark.
 
+### Test organization commands
+
+```bash
+go test ./...                                          # Unit tests only (fast)
+go test -count=1 -run Integration ./...                # Integration tests (needs Docker)
+go test -fuzz FuzzCreateUserInput -fuzztime 30s ./...  # Fuzz tests (30 second budget)
+go test -bench=. -benchmem ./...                       # Benchmark tests
+go test -race ./...                                    # Race condition detection
+```
+
 ## Unit tests
 
 Test business logic in isolation by mocking dependencies. Use table-driven tests for comprehensive coverage.
@@ -85,6 +95,15 @@ func TestUserService_FindByID(t *testing.T) {
             },
             wantUser:  nil,
             wantError: domain.ErrNotFound,
+        },
+        {
+            name: "returns ErrValidation for zero UUID",
+            id:   uuid.Nil,
+            mockSetup: func(repository *mocks.UserRepository, cache *mocks.Cache) {
+                // nothing should be called -- validation fails first
+            },
+            wantUser:  nil,
+            wantError: domain.ErrValidation,
         },
     }
 
@@ -153,6 +172,7 @@ func TestUserRepository_Create_Integration(t *testing.T) {
     found, err := repository.FindByID(ctx, user.ID)
     require.NoError(t, err)
     assert.Equal(t, user.Username, found.Username)
+    assert.Equal(t, user.FullName, found.FullName)
 }
 ```
 
@@ -162,52 +182,81 @@ Go's built-in fuzz testing sends random/mutated input to find crashes:
 
 ```go
 func FuzzCreateUserInput(f *testing.F) {
+    // Seed corpus: valid examples that the fuzzer will mutate
     f.Add(`{"username":"john","phone":"+998901234567","full_name":"John Doe"}`)
     f.Add(`{"username":"","phone":"","full_name":""}`)
+    f.Add(`{"username":"a","phone":"123","full_name":"x"}`)
 
     f.Fuzz(func(t *testing.T, input string) {
         var dto request.CreateUser
         if err := json.Unmarshal([]byte(input), &dto); err != nil {
-            return
+            return // Invalid JSON is expected, just skip
         }
 
+        // The validator must NEVER panic, regardless of input
         require.NotPanics(t, func() {
-            _ = request.ValidateDTO(&dto)
+            _ = validator.ValidateStruct(&dto)
         })
     })
 }
 ```
 
+Run: `go test -fuzz FuzzCreateUserInput -fuzztime 30s ./internal/handler/api/`
+
 ## Security tests
 
-Verify that parameterized queries prevent SQL injection and that internal errors are never leaked:
+Verify that parameterized queries prevent SQL injection, that role escalation is blocked, and that internal errors are never leaked:
+
+### SQL injection prevention
 
 ```go
 func TestSQLInjection(t *testing.T) {
     payloads := []string{
         "'; DROP TABLE users; --",
         "' OR '1'='1",
+        "admin'--",
         "1; SELECT * FROM information_schema.tables",
+        "' UNION SELECT username, password FROM users --",
     }
 
     for _, payload := range payloads {
         t.Run(payload, func(t *testing.T) {
+            // pgx parameterized queries treat this as a literal string, not SQL
             user, err := repository.FindByUsername(ctx, payload)
             assert.Nil(t, user)
             assert.True(t, errors.Is(err, domain.ErrNotFound))
         })
     }
 }
+```
 
+### Role escalation prevention
+
+```go
+func TestRoleEscalation(t *testing.T) {
+    // A regular user tries to set their role to superadmin
+    body := `{"role": "superadmin"}`
+    request := httptest.NewRequest("PUT", "/api/users/me", strings.NewReader(body))
+    request.Header.Set("Authorization", "Bearer "+regularUserToken)
+
+    response, _ := app.Test(request)
+    assert.Equal(t, 403, response.StatusCode)
+}
+```
+
+### Error sanitization
+
+```go
 func TestErrorSanitization(t *testing.T) {
+    // Trigger an internal error and verify no internals are leaked
     response, _ := app.Test(httptest.NewRequest("GET", "/api/users/invalid-uuid", nil))
     body, _ := io.ReadAll(response.Body)
 
     bodyString := string(body)
-    assert.NotContains(t, bodyString, "pq:")
-    assert.NotContains(t, bodyString, "/app/")
-    assert.NotContains(t, bodyString, "goroutine")
-    assert.NotContains(t, bodyString, "password")
+    assert.NotContains(t, bodyString, "pq:")          // no Postgres errors
+    assert.NotContains(t, bodyString, "/app/")         // no file paths
+    assert.NotContains(t, bodyString, "goroutine")     // no stack traces
+    assert.NotContains(t, bodyString, "password")      // no sensitive fields
 }
 ```
 
@@ -224,14 +273,50 @@ func TestErrorSanitization(t *testing.T) {
 
 ## NASA P10 safety rules (Go adaptation)
 
-| Rule | Go adaptation | Enforcement |
-|---|---|---|
-| Simple control flow | No `goto`, max nesting 4, no recursion | `nestif`, `cyclop` linters |
-| Fixed upper bounds on loops | `context.WithTimeout` on all external calls | Context propagation |
-| No dynamic memory after init | `sync.Pool`, pre-allocated slices | `prealloc` linter |
-| Short functions | Max ~60 lines | `funlen: 80` linter |
-| Minimal assertions | Guard clauses, input validation, error checks | `validator`, `errcheck` |
-| Declare at smallest scope | Variables declared where first used | `varnamelen` linter |
-| Check all return values | Never use `_` for error returns | `errcheck` linter |
-| Restrict pointer use | Value receivers where possible | Code review |
-| Compile with all warnings | golangci-lint with 20+ linters | CI pipeline gate |
+NASA's Power of Ten rules were designed for mission-critical C code. Here is how each rule translates to Go:
+
+| # | Original Rule | Go Adaptation | Enforcement | Why It Matters |
+|---|---|---|---|---|
+| 1 | Simple control flow | No `goto`, max nesting 4, no recursion | `nestif`, `cyclop` linters | Deep nesting and complex flow are the #1 source of bugs |
+| 2 | Fixed upper bounds on loops | `context.WithTimeout` on all external calls | Context propagation | Unbounded operations can hang forever |
+| 3 | No dynamic memory after init | `sync.Pool`, pre-allocated slices | `prealloc` linter | Uncontrolled allocation causes GC pauses |
+| 4 | Short functions | Max ~60 lines | `funlen: 80` linter | Long functions are hard to understand and test |
+| 5 | Minimal assertions | Guard clauses, input validation, error checks | `validator`, `errcheck` | Silent failures cause data corruption |
+| 6 | Declare at smallest scope | Variables declared where first used | `varnamelen` linter | Wide scope = more places for bugs |
+| 7 | Check all return values | Never use `_` for error returns | `errcheck` linter | Ignored errors hide bugs that surface later |
+| 8 | Limit preprocessor use | No build tags / conditional compilation | Policy | Conditional code doubles the paths to test |
+| 9 | Restrict pointer use | Value receivers where possible | Code review | Pointers create aliasing bugs |
+| 10 | Compile with all warnings | golangci-lint with 20+ linters | CI pipeline gate | Catch bugs before they reach production |
+
+### Recommended `.golangci.yml`
+
+```yaml
+linters:
+  enable:
+    - errcheck       # All errors must be checked
+    - govet          # Go vet checks (shadow, printf, etc.)
+    - staticcheck    # Advanced static analysis
+    - unused         # Find unused code
+    - gosimple       # Simplify code
+    - ineffassign    # Detect useless assignments
+    - typecheck      # Type checking
+    - gocritic       # Opinionated code quality
+    - cyclop         # Cyclomatic complexity
+    - nestif         # Deeply nested ifs
+    - funlen         # Function length
+    - gocognit       # Cognitive complexity
+    - prealloc       # Suggest pre-allocation
+    - errorlint      # Error wrapping correctness
+    - wrapcheck      # Errors from external packages must be wrapped
+    - noctx          # HTTP requests must use context
+    - gosec          # Security issues
+    - bodyclose      # HTTP response body must be closed
+
+linters-settings:
+  funlen:
+    lines: 80
+  cyclop:
+    max-complexity: 15
+  nestif:
+    min-complexity: 5
+```
