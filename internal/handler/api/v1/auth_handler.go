@@ -30,7 +30,7 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      requestDTO.LoginRequest  true  "Login credentials"
-// @Success      200   {object}  response.Response
+// @Success      200   {object}  response.Response[responseV1.LoginResponse]
 // @Failure      400   {object}  response.ErrorResponse  "Validation error"
 // @Failure      401   {object}  response.ErrorResponse  "Unauthorized"
 // @Failure      500   {object}  response.ErrorResponse  "Internal server error"
@@ -67,7 +67,7 @@ func (handler *AuthHandler) Login(ctx fiber.Ctx) error {
 	}
 
 	sessionExpiresAt := time.Now().UTC().Add(handler.authService.SessionDuration())
-	if jsonError := ctx.JSON(response.Response{
+	if jsonError := ctx.JSON(response.Response[responseV1.LoginResponse]{
 		Data: responseV1.LoginResponse{
 			Token:     sessionToken,
 			ExpiresAt: sessionExpiresAt,
