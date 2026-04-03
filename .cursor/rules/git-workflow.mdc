@@ -1,0 +1,37 @@
+---
+description: Branch names, Conventional Commits, and PR workflow for this repository
+alwaysApply: true
+---
+
+# Git workflow (fiber-v3-template)
+
+Follow **[CONTRIBUTING.md](../../CONTRIBUTING.md)** for the full tables and commands. Summary:
+
+## Branch naming (required prefix)
+
+| Prefix | Use for |
+|--------|---------|
+| `feature/` or `feat/` | New functionality |
+| `fix/` or `bugfix/` | Bug fixes |
+| `hotfix/` | Urgent production fixes |
+| `refactor/` | Restructure without behavior change |
+| `chore/` | CI, deps, GitHub config, maintenance |
+| `docs/` | Documentation only |
+| `test/` | Test-only changes |
+| `release/` | Release prep |
+
+Use **lowercase** and **hyphens**: `docs/api-guide`, not `Docs_ApiGuide`.
+
+## Commits
+
+Use **Conventional Commits**: `type(scope): description` (e.g. `fix(api): return 404 for missing user`).
+
+## Workflow
+
+- Branch from **up to date `main`**; **never commit directly to `main`**.
+- **Push to `origin`** and open a **pull request**; keep PRs reviewable (aim under ~400 lines when practical).
+- Before pushing: run **`make verify`** (fmt, tidy, build, vet, lint, test).
+
+## Where this is documented
+
+[CONTRIBUTING.md](../../CONTRIBUTING.md), [AGENTS.md](../../AGENTS.md), and [GO_FIBER_PROJECT_GUIDE.md](../../GO_FIBER_PROJECT_GUIDE.md) section 22.
