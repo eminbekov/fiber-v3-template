@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// ValidateSignedURL checks HMAC-SHA256 token and expiry for a file path segment (see GO_FIBER_PROJECT_GUIDE §11.1).
+// ValidateSignedURL checks HMAC-SHA256 token and expiry for a file path segment.
 func ValidateSignedURL(filename string, token string, expiresUnix int64, signingKey []byte) bool {
 	if len(signingKey) == 0 || filename == "" || token == "" {
 		return false

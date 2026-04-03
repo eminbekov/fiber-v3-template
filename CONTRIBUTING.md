@@ -94,7 +94,7 @@ If you plan a **large change**, open an issue or discussion first so maintainers
 
 This project follows **GitHub Flow**: `main` is expected to stay **deployable**; work happens on **short-lived branches** merged via **pull requests**.
 
-The rules below mirror **[GO_FIBER_PROJECT_GUIDE.md](./GO_FIBER_PROJECT_GUIDE.md)** (section “Git Best Practices”) and **[AGENTS.md](./AGENTS.md)**. They exist so humans and automation share the same vocabulary.
+The rules below align with **[AGENTS.md](./AGENTS.md)** and are expanded here so humans and automation share the same vocabulary.
 
 ### Rules that always apply
 
@@ -259,7 +259,6 @@ Optional features are guarded by **marker comments** such as `// [module:nats:st
 | [TESTING.md](./TESTING.md) | How and what to test |
 | [SECURITY.md](./SECURITY.md) | Reporting vulnerabilities |
 | [AGENTS.md](./AGENTS.md) | Guidance for automation and contributors (Git, imports, markers) |
-| [GO_FIBER_PROJECT_GUIDE.md](./GO_FIBER_PROJECT_GUIDE.md) | Long-form reference (includes Git best practices) |
 
 ---
 

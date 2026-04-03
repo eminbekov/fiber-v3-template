@@ -19,7 +19,6 @@ vendor/
 coverage.out
 coverage.html
 
-GO_FIBER_PROJECT_GUIDE.md
 TASKS.md
 
 .DS_Store
