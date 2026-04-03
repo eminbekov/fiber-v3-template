@@ -554,6 +554,17 @@ Rules for common template change areas:
 
 Prefer small PRs (roughly under 400 changed lines when possible), include a clear description, and link the related issue/ticket when available.
 
+## Community
+
+| Resource | Purpose |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Full contributor guide: setup, branches, commits, PRs, `make verify` |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards for participation |
+| [SECURITY.md](SECURITY.md) | How to report vulnerabilities privately |
+| [LICENSE](LICENSE) | MIT license terms |
+
+Issue and pull request forms live under [`.github/`](.github/).
+
 ## FAQ
 
 ### Can I remove modules after setup?
