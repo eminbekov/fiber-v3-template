@@ -66,7 +66,7 @@ The installer removes blocks for disabled modules and removes marker comments fo
 | `console` | Console CLI admin commands | `cmd/console`, `internal/console` | `DATABASE_URL`, `REDIS_URL` |
 | `generate` | Code generator CLI (migrations and resource scaffolding) | `cmd/generate`, `internal/generate` | - |
 | `k8s` | Kubernetes manifests and Envoy WAF filter | `deploy/k8s` | - |
-| `monitoring` | Local observability stack configs | `deploy/monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
+| `monitoring` | Local observability stack configs (Prometheus, Loki, Tempo, Grafana, exporters) | `deploy/monitoring` | `OTEL_EXPORTER_ENDPOINT` (when using collector) |
 | `swagger` | Generated OpenAPI docs and route | `docs` | - |
 
 ### Manual removal (without installer)
@@ -427,11 +427,23 @@ Health and metrics:
 
 Telemetry flow:
 
-- Logs: app stdout -> Promtail -> Loki -> Grafana
+- Logs: app stdout (slog JSON in production) -> Promtail -> Loki -> Grafana
 - Metrics: Prometheus scrapes `http://app:8080/metrics` -> Grafana
 - Traces: app exports OTLP gRPC to `otel-collector:4317` -> Tempo -> Grafana
+- PostgreSQL metrics: `postgres-exporter:9187` -> Prometheus -> Grafana
+- Redis metrics: `redis-exporter:9121` -> Prometheus -> Grafana
+- NATS metrics: `nats-exporter:7777` -> Prometheus -> Grafana
 
-Monitoring configuration is stored under `deploy/monitoring/`.
+Monitoring configuration is stored under `deploy/monitoring/`. The provisioned Grafana dashboard (`deploy/monitoring/grafana/dashboards/app-overview.json`) covers HTTP overview, Go runtime, PostgreSQL, Redis, NATS/JetStream, logs, and traces.
+
+### Infrastructure authentication
+
+Redis and NATS require passwords in all environments (compose, dev-compose, CI). Credentials are embedded in the connection URLs:
+
+- Redis: `redis://:redis_password@host:6379/0` (set via `--requirepass` in Docker)
+- NATS: `nats://nats_user:nats_password@host:4222` (set via `--user`/`--pass` flags)
+
+Change these defaults for production deployments.
 
 ## Endpoints
 

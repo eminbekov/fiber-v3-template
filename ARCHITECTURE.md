@@ -328,8 +328,15 @@ Your Go App
 | **Promtail** | Reads container logs, ships to Loki |
 | **Loki** | Stores and indexes logs |
 | **Prometheus** | Scrapes /metrics, stores time-series data |
-| **Grafana** | Visualizes logs and metrics in dashboards |
+| **Grafana** | Visualizes logs, metrics, and traces in dashboards |
 | **OTEL Collector** | Receives traces/metrics, exports to backends |
+| **postgres-exporter** | Exposes PostgreSQL metrics (connections, transactions, cache hit ratio) |
+| **redis-exporter** | Exposes Redis metrics (memory, commands, clients, keyspace) |
+| **nats-exporter** | Exposes NATS/JetStream metrics (messages, connections, streams) |
+
+### Grafana dashboard
+
+The provisioned dashboard (`deploy/monitoring/grafana/dashboards/app-overview.json`) is auto-loaded by Grafana on startup and covers seven sections: HTTP overview, Go runtime, PostgreSQL, Redis, NATS/JetStream, application logs (Loki), and trace search (Tempo).
 
 ### Structured logging with slog
 

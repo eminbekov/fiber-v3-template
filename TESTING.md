@@ -41,7 +41,7 @@ make test-cover
 make security
 ```
 
-CI runs them in order: unit -> fuzz -> integration -> benchmark.
+CI runs them in order: lint -> test (with Postgres, Redis, NATS services) -> security (govulncheck) -> swagger verification -> build and push image (on push to main only).
 
 ### Test organization commands
 
