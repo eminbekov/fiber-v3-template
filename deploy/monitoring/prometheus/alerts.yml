@@ -30,3 +30,30 @@ groups:
         annotations:
           summary: "Application /metrics target is down"
           description: "Prometheus cannot scrape the app metrics endpoint."
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: pg_stat_activity_count{state="active"} > 90
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL active connections above 90"
+          description: "Active database connections are high, pool may be exhausted."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage above 85%"
+          description: "Redis memory consumption is approaching the configured maximum."
+
+      - alert: NATSConsumerLag
+        expr: nats_jetstream_consumer_num_pending > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NATS JetStream consumer has >10k pending messages"
+          description: "A JetStream consumer has significant pending message lag."
