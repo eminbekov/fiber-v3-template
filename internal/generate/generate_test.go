@@ -103,13 +103,13 @@ func TestNamingConversions(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name            string
-		input           string
-		expectedSnake   string
-		expectedCamel   string
-		expectedLower   string
-		expectedPlural  string
-		expectedTable   string
+		name           string
+		input          string
+		expectedSnake  string
+		expectedCamel  string
+		expectedLower  string
+		expectedPlural string
+		expectedTable  string
 	}{
 		{
 			name:           "camel case name",

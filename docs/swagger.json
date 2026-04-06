@@ -96,7 +96,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_LoginResponse"
                         }
                     },
                     "400": {
@@ -197,7 +197,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_FileResponse"
                         }
                     },
                     "400": {
@@ -244,7 +244,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-internal_handler_api_v1_PingResponse"
                         }
                     }
                 }
@@ -288,7 +288,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserListResponse"
                         }
                     },
                     "400": {
@@ -349,7 +349,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserResponse"
                         }
                     },
                     "400": {
@@ -410,7 +410,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserResponse"
                         }
                     },
                     "400": {
@@ -484,7 +484,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response"
+                            "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserResponse"
                         }
                     },
                     "400": {
@@ -705,10 +705,144 @@
                 }
             }
         },
-        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response": {
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_FileResponse": {
             "type": "object",
             "properties": {
-                "data": {}
+                "data": {
+                    "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.FileResponse"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_LoginResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.LoginResponse"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.UserListResponse"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-github_com_eminbekov_fiber-v3-template_internal_dto_response_v1_UserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.UserResponse"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response.Response-internal_handler_api_v1_PingResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_handler_api_v1.PingResponse"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.FileResponse": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string",
+                    "example": "image/png"
+                },
+                "key": {
+                    "type": "string",
+                    "example": "019b1234-5678-7abc-8def-0123456789ab.jpg"
+                },
+                "public_url": {
+                    "type": "string"
+                },
+                "signed_url": {
+                    "type": "string",
+                    "example": "/api/files/019b1234.jpg?token=...\u0026expires=..."
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string",
+                    "example": "2026-04-02T10:00:00Z"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "session_01HQW1K4N2A9D7YZ8R3B5M6C7E"
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.UserListResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 125
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.UserResponse"
+                    }
+                }
+            }
+        },
+        "github_com_eminbekov_fiber-v3-template_internal_dto_response_v1.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-03-30T12:00:00Z"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "01912e5a-4b7c-7f3a-9d1e-1a2b3c4d5e6f"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+998901234567"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-03-31T12:00:00Z"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "internal_handler_api_v1.PingResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
             }
         }
     },
