@@ -10,6 +10,11 @@ func setMinimalRequiredEnvironment(testingContext *testing.T) {
 	testingContext.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db?sslmode=disable")
 	testingContext.Setenv("REDIS_URL", "redis://localhost:6379/0")
 	testingContext.Setenv("FILE_SIGNING_KEY", "test-signing-key")
+
+	// Clear vars that CI may inject so getenvOrDefault returns actual defaults.
+	testingContext.Setenv("ENVIRONMENT", "")
+	testingContext.Setenv("LOG_LEVEL", "")
+	testingContext.Setenv("HTTP_LISTEN_ADDRESS", "")
 }
 
 func TestLoad_DefaultValues(testingContext *testing.T) {

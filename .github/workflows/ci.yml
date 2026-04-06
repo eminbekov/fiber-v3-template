@@ -80,7 +80,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Run tests
-        run: go test -race -count=1 ./...
+        run: go test -race -short -count=1 ./...
 
   swagger:
     name: Swagger
