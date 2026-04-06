@@ -27,7 +27,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           args: --timeout=5m ./...
@@ -50,16 +50,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      redis:
-        image: redis:8.6.2-alpine3.23
-        options: >-
-          --health-cmd "redis-cli -a redis_password ping"
-          --health-interval 10s
-          --health-timeout 3s
-          --health-retries 5
-          redis-server --requirepass redis_password
-        ports:
-          - 6379:6379
     env:
       ENVIRONMENT: development
       LOG_LEVEL: info
@@ -69,6 +59,14 @@ jobs:
       NATS_URL: nats://nats_user:nats_password@localhost:4222
       FILE_SIGNING_KEY: ci-temporary-signing-key
     steps:
+      - name: Start Redis with auth
+        run: |
+          docker run -d --name redis -p 6379:6379 redis:8.6.2-alpine3.23 \
+            redis-server --requirepass redis_password
+          for i in $(seq 1 10); do
+            docker exec redis redis-cli -a redis_password ping && break
+            sleep 1
+          done
       - name: Start NATS with JetStream and auth
         run: |
           docker run -d --name nats -p 4222:4222 nats:2.12.6-alpine \
@@ -119,6 +117,13 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
       - name: Run govulncheck
         run: govulncheck ./...
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: 1
 
   build:
     name: Build and Push Image
