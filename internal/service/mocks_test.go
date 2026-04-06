@@ -55,13 +55,13 @@ func (mockRepository *mockUserRepository) SoftDelete(ctx context.Context, id uui
 }
 
 type mockRoleRepository struct {
-	findByIDFunction         func(ctx context.Context, id int64) (*domain.Role, error)
-	findByNameFunction       func(ctx context.Context, name string) (*domain.Role, error)
-	findByUserIDFunction     func(ctx context.Context, userID uuid.UUID) ([]domain.Role, error)
-	listFunction             func(ctx context.Context) ([]domain.Role, error)
-	createFunction           func(ctx context.Context, role *domain.Role) error
-	assignToUserFunction     func(ctx context.Context, userID uuid.UUID, roleID int64) error
-	removeFromUserFunction   func(ctx context.Context, userID uuid.UUID, roleID int64) error
+	findByIDFunction       func(ctx context.Context, id int64) (*domain.Role, error)
+	findByNameFunction     func(ctx context.Context, name string) (*domain.Role, error)
+	findByUserIDFunction   func(ctx context.Context, userID uuid.UUID) ([]domain.Role, error)
+	listFunction           func(ctx context.Context) ([]domain.Role, error)
+	createFunction         func(ctx context.Context, role *domain.Role) error
+	assignToUserFunction   func(ctx context.Context, userID uuid.UUID, roleID int64) error
+	removeFromUserFunction func(ctx context.Context, userID uuid.UUID, roleID int64) error
 }
 
 func (mockRepository *mockRoleRepository) FindByID(ctx context.Context, id int64) (*domain.Role, error) {

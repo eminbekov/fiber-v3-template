@@ -50,7 +50,7 @@ const (
 	DefaultGRPCListenAddress = ":9090"
 	// [module:grpc:end]
 	// [module:nats:start]
-	DefaultNATSURL = "nats://nats_user:nats_password@localhost:4222"
+	DefaultNATSURL = "nats://nats_user:nats_password@localhost:4222" //nolint:gosec // development default, not a production credential
 	// [module:nats:end]
 	// [module:views:start]
 	DefaultViewsPath = "./views"
