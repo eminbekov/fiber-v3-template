@@ -36,7 +36,9 @@ COPY --from=builder /app/migrate ./migrate
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/views ./views
 COPY deploy/docker/entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+RUN chown -R appuser:appgroup /app && \
+    chmod -R u+rwX,go+rX /app && \
+    chmod 755 ./entrypoint.sh
 
 USER appuser
 
