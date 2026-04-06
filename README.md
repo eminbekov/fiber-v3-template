@@ -16,15 +16,17 @@ cd my-project
 2. Asks your new module path (`github.com/you/project`)
 3. Lets you keep/remove optional modules
 4. Builds your `.env` from prompts
-5. Runs `go mod tidy` and `gofmt`
-6. Removes template git history and remote origin, initializes fresh repository
-7. Optionally configures a new git remote origin
+5. If you keep the **gRPC** module and `protoc` is installed, runs `make proto` to regenerate `gen/` after the module path change (otherwise install `protoc` and run `make proto` before building)
+6. Runs `go mod tidy` and `gofmt`
+7. Removes template git history and remote origin, initializes fresh repository
+8. Optionally configures a new git remote origin
 
 ## Requirements
 
 - Go `1.26+` (repo currently uses `1.26.1`)
 - Git
 - Optional for containerized workflows: Docker + Docker Compose
+- If you keep the **gRPC** optional module: **[Protocol Buffers compiler (`protoc`)](https://protobuf.dev/installation/)** plus Go plugins (`protoc-gen-go`, `protoc-gen-go-grpc`) so `make proto` can regenerate `gen/` after `setup.sh` rewrites your module path
 
 ## One-Command Installer
 

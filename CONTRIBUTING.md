@@ -56,6 +56,7 @@ If you plan a **large change**, open an issue or discussion first so maintainers
 - **Git:** for version control.
 - **PostgreSQL and Redis:** required for a running application; integration tests may use containers (see `TESTING.md`).
 - **Optional:** Docker and Docker Compose for container workflows; `make` for standard tasks.
+- **gRPC / protobuf (when the `grpc` module is present):** `protoc` and the Go plugins `protoc-gen-go` and `protoc-gen-go-grpc` (on `PATH`) so you can run `make proto` after changing the module path or editing `.proto` files.
 
 ### First-time setup (typical)
 
@@ -80,6 +81,12 @@ If you plan a **large change**, open an issue or discussion first so maintainers
 
    ```bash
    go build ./...
+   ```
+
+   If your tree includes gRPC (`proto/` and `gen/`), regenerate Go stubs whenever `.proto` files or `go_package` paths change:
+
+   ```bash
+   make proto
    ```
 
 5. Before opening a pull request, run the full verification sequence (see [Testing and verification](#testing-and-verification)):
