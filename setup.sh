@@ -504,7 +504,9 @@ main() {
   collect_database_config
   collect_redis_config
   build_env_file
-  run_finalize_commands
+  if ! ( run_finalize_commands ); then
+    log_warning "Finalize commands had errors (run 'make verify' after setup to check)"
+  fi
   maybe_remove_template_files
   maybe_remove_setup_script
   setup_git_repository
