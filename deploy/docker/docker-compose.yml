@@ -19,7 +19,7 @@ services:
       BODY_LIMIT: "4194304"
       OTEL_EXPORTER_ENDPOINT: otel-collector:4317
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:redis_password@redis:6379/0
       # [module:nats:start]
       NATS_URL: nats://nats:4222
       # [module:nats:end]
@@ -64,10 +64,11 @@ services:
 
   redis:
     image: redis:8.6.2-alpine3.23
+    command: ["redis-server", "--requirepass", "redis_password"]
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
