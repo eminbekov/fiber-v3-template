@@ -29,9 +29,10 @@ services:
   # [module:nats:start]
   nats:
     image: nats:2.12.6-alpine
-    command: ["--jetstream"]
+    command: ["--jetstream", "--user", "nats_user", "--pass", "nats_password", "-m", "8222"]
     ports:
       - "4222:4222"
+      - "8222:8222"
   # [module:nats:end]
 
 volumes:

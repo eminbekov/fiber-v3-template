@@ -60,19 +60,20 @@ jobs:
           redis-server --requirepass redis_password
         ports:
           - 6379:6379
-      nats:
-        image: nats:2.12.6-alpine
-        ports:
-          - 4222:4222
     env:
       ENVIRONMENT: development
       LOG_LEVEL: info
       HTTP_LISTEN_ADDRESS: :8080
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/fiber_template?sslmode=disable
       REDIS_URL: redis://:redis_password@localhost:6379/0
-      NATS_URL: nats://localhost:4222
+      NATS_URL: nats://nats_user:nats_password@localhost:4222
       FILE_SIGNING_KEY: ci-temporary-signing-key
     steps:
+      - name: Start NATS with JetStream and auth
+        run: |
+          docker run -d --name nats -p 4222:4222 nats:2.12.6-alpine \
+            --jetstream --user nats_user --pass nats_password
+          sleep 2
       - name: Checkout
         uses: actions/checkout@v6
       - name: Setup Go

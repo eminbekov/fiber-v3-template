@@ -21,7 +21,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
       REDIS_URL: redis://:redis_password@redis:6379/0
       # [module:nats:start]
-      NATS_URL: nats://nats:4222
+      NATS_URL: nats://nats_user:nats_password@nats:4222
       # [module:nats:end]
       SESSION_DURATION: 24h
       STORAGE_TYPE: local
@@ -76,9 +76,10 @@ services:
   # [module:nats:start]
   nats:
     image: nats:2.12.6-alpine
-    command: ["--jetstream"]
+    command: ["--jetstream", "--user", "nats_user", "--pass", "nats_password", "-m", "8222"]
     ports:
       - "4222:4222"
+      - "8222:8222"
   # [module:nats:end]
 
   # [module:monitoring:start]
