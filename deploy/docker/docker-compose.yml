@@ -137,6 +137,36 @@ services:
       tempo:
         condition: service_started
 
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      DATA_SOURCE_NAME: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD: redis_password
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:0.15.0
+    command: ["-varz", "-jsz=all", "-connz", "-subz", "http://nats:8222"]
+    ports:
+      - "7777:7777"
+    depends_on:
+      nats:
+        condition: service_started
+
   grafana:
     image: grafana/grafana:11.4.0
     ports:
