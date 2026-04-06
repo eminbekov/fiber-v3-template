@@ -139,16 +139,25 @@ replace_in_file() {
 
 replace_module_path() {
   local new_module_path="$1"
+  local go_file_path
+  local proto_file_path
 
   print_section "Module Path"
   log_info "Replacing module path: ${TEMPLATE_MODULE_PATH} -> ${new_module_path}"
 
   while IFS= read -r go_file_path; do
     replace_in_file "${go_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
-  done < <(find . -type f -name "*.go" -not -path "./.git/*" -print)
+  done < <(find . -type f -name "*.go" -not -path "./.git/*" -not -path "./gen/*" -print)
+
+  while IFS= read -r proto_file_path; do
+    replace_in_file "${proto_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
+  done < <(find . -type f -name "*.proto" -not -path "./.git/*" -print)
 
   replace_in_file "go.mod" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
   replace_in_file "deploy/docker/docker-compose.yml" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
+
+  rm -rf gen
+  log_info "Removed gen/ (protobuf output is regenerated during finalize when protoc is available)"
 }
 
 remove_marker_block() {
@@ -433,6 +442,19 @@ run_finalize_commands() {
       else
         log_warning "goimports unavailable after install attempt; unused imports may remain"
       fi
+    fi
+  fi
+
+  if [[ -d proto ]]; then
+    if command -v protoc >/dev/null 2>&1; then
+      if make proto; then
+        log_info "Regenerated protobuf files"
+      else
+        log_warning "make proto failed; install protoc plugins and run 'make proto' manually"
+      fi
+    else
+      log_warning "protoc not found; run 'make proto' manually before building"
+      mkdir -p gen/proto/user/v1
     fi
   fi
 
