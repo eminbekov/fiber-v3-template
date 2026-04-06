@@ -1,0 +1,6 @@
+# CVE-2026-34040: github.com/docker/docker v28.5.2+incompatible
+# Fixed in Docker v29.3.1, but v29.x is not published to the Go module proxy
+# under the github.com/docker/docker path. This is a transitive dependency
+# from testcontainers-go v0.41.0 (latest) and cannot be upgraded via go get.
+# Tracked upstream: https://github.com/testcontainers/testcontainers-go/issues
+CVE-2026-34040
