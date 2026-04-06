@@ -52,13 +52,14 @@ jobs:
           --health-retries 5
       redis:
         image: redis:8.6.2-alpine3.23
-        ports:
-          - 6379:6379
         options: >-
-          --health-cmd "redis-cli ping"
+          --health-cmd "redis-cli -a redis_password ping"
           --health-interval 10s
           --health-timeout 3s
           --health-retries 5
+          redis-server --requirepass redis_password
+        ports:
+          - 6379:6379
       nats:
         image: nats:2.12.6-alpine
         ports:
@@ -68,7 +69,7 @@ jobs:
       LOG_LEVEL: info
       HTTP_LISTEN_ADDRESS: :8080
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/fiber_template?sslmode=disable
-      REDIS_URL: redis://localhost:6379/0
+      REDIS_URL: redis://:redis_password@localhost:6379/0
       NATS_URL: nats://localhost:4222
       FILE_SIGNING_KEY: ci-temporary-signing-key
     steps:

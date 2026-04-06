@@ -17,10 +17,11 @@ services:
 
   redis:
     image: redis:8.6.2-alpine3.23
+    command: ["redis-server", "--requirepass", "redis_password"]
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
