@@ -190,7 +190,7 @@ swagger-fmt: ## Format Swagger annotations
 proto: ## Generate Go code from protobuf definitions
 	protoc --go_out=gen --go_opt=paths=source_relative \
 	       --go-grpc_out=gen --go-grpc_opt=paths=source_relative \
-	       proto/**/**/*.proto
+	       $$(find proto -name '*.proto')
 # [module:grpc:end]
 
 # --- Docker ---
