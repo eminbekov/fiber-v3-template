@@ -1,6 +1,8 @@
 # Full stack: app + data stores + observability (guide §19.3, §20.2)
 # Run from repository root: docker compose -f deploy/docker/docker-compose.yml up --build -d
 
+name: ${COMPOSE_PROJECT_NAME:-fiber-template}
+
 services:
   app:
     build:

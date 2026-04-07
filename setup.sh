@@ -379,6 +379,13 @@ build_env_file() {
     default_value="${line_value#*=}"
 
     case "${variable_name}" in
+      COMPOSE_PROJECT_NAME)
+        local project_name
+        project_name="${new_module_path##*/}"
+        printf "%s=%s\n" "${variable_name}" "${project_name}" >> "${ENV_FILE}"
+        log_info "COMPOSE_PROJECT_NAME set to ${project_name}"
+        continue
+        ;;
       DATABASE_URL)
         assembled_value="$(assembled_database_url)"
         printf "%s=%s\n" "${variable_name}" "${assembled_value}" >> "${ENV_FILE}"
