@@ -375,7 +375,7 @@ build_env_file() {
         ;;
     esac
 
-    read -r -p "$(printf "%-30s [%s]: " "${variable_name}" "${default_value}")" user_value
+    read -r -p "$(printf "%-30s [%s]: " "${variable_name}" "${default_value}")" user_value < /dev/tty
     user_value="${user_value:-${default_value}}"
     printf "%s=%s\n" "${variable_name}" "${user_value}" >> "${ENV_FILE}"
   done < "${ENV_EXAMPLE_FILE}"
