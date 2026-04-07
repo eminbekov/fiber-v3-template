@@ -18,10 +18,10 @@ services:
       CORS_ALLOW_ORIGINS: ""
       BODY_LIMIT: "4194304"
       OTEL_EXPORTER_ENDPOINT: otel-collector:4317
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
-      REDIS_URL: redis://:redis_password@redis:6379/0
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fiber_template}?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:${REDIS_PORT:-6379}/0
       # [module:nats:start]
-      NATS_URL: nats://nats_user:nats_password@nats:4222
+      NATS_URL: nats://${NATS_USER:-nats_user}:${NATS_PASSWORD:-nats_password}@nats:${NATS_PORT:-4222}
       # [module:nats:end]
       SESSION_DURATION: 24h
       STORAGE_TYPE: local
@@ -49,26 +49,26 @@ services:
   postgres:
     image: postgres:18.3-alpine3.23
     environment:
-      POSTGRES_DB: fiber_template
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-fiber_template}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d fiber_template"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-fiber_template}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:8.6.2-alpine3.23
-    command: ["redis-server", "--requirepass", "redis_password"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-redis_password}"]
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_password}", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -76,9 +76,9 @@ services:
   # [module:nats:start]
   nats:
     image: nats:2.12.6-alpine
-    command: ["--jetstream", "--user", "nats_user", "--pass", "nats_password", "-m", "8222"]
+    command: ["--jetstream", "--user", "${NATS_USER:-nats_user}", "--pass", "${NATS_PASSWORD:-nats_password}", "-m", "8222"]
     ports:
-      - "4222:4222"
+      - "${NATS_PORT:-4222}:4222"
       - "8222:8222"
   # [module:nats:end]
 
@@ -140,7 +140,7 @@ services:
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
     environment:
-      DATA_SOURCE_NAME: postgres://postgres:postgres@postgres:5432/fiber_template?sslmode=disable
+      DATA_SOURCE_NAME: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fiber_template}?sslmode=disable
     ports:
       - "9187:9187"
     depends_on:
@@ -151,7 +151,7 @@ services:
     image: oliver006/redis_exporter:v1.67.0
     environment:
       REDIS_ADDR: redis://redis:6379
-      REDIS_PASSWORD: redis_password
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
     ports:
       - "9121:9121"
     depends_on:
