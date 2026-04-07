@@ -236,6 +236,7 @@ if err != nil {
 - The installer script `setup.sh` uses these markers to remove disabled modules safely.
 - When adding a new removable feature, mark imports, config fields, wiring blocks, routes, and infra snippets consistently.
 - Keep marker blocks statement-scoped; do not wrap partial expressions.
+- Files under `gen/` are **protoc-generated** and contain binary protobuf descriptors with length-prefixed fields. **Never** apply text-based find-and-replace (e.g. `sed`) on these files -- it corrupts the wire-format descriptors and causes runtime panics. Update the `.proto` source files instead and run `make proto` to regenerate `gen/`.
 
 ## Common mistakes to avoid
 

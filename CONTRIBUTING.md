@@ -75,6 +75,8 @@ If you plan a **large change**, open an issue or discussion first so maintainers
 
    The script can rewrite the module path, trim optional modules, and help produce a valid `.env`. It is the primary entry point documented in the README.
 
+   **Proto / gRPC note:** the installer updates `.proto` source files with the new module path but intentionally leaves the generated Go files in `gen/` untouched (their embedded protobuf descriptors use a binary wire format that `sed` would corrupt). If `protoc` is on your `PATH`, the installer runs `make proto` to regenerate `gen/` automatically. If `protoc` is **not** installed, the existing `gen/` files still compile and work -- install the toolchain later and run `make proto` when convenient.
+
 3. **Configure environment:** copy from `.env.example` to `.env` if you are not using the interactive installer. **Never commit secrets.** Do not paste real credentials into issues or pull requests.
 
 4. **Build** to confirm the tree compiles:
