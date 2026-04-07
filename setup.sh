@@ -147,7 +147,7 @@ replace_module_path() {
 
   while IFS= read -r go_file_path; do
     replace_in_file "${go_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
-  done < <(find . -type f -name "*.go" -not -path "./.git/*" -not -path "./gen/*" -print)
+  done < <(find . -type f -name "*.go" -not -path "./.git/*" -print)
 
   while IFS= read -r proto_file_path; do
     replace_in_file "${proto_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
@@ -155,9 +155,6 @@ replace_module_path() {
 
   replace_in_file "go.mod" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
   replace_in_file "deploy/docker/docker-compose.yml" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
-
-  rm -rf gen
-  log_info "Removed gen/ (protobuf output is regenerated during finalize when protoc is available)"
 }
 
 remove_marker_block() {
@@ -453,8 +450,7 @@ run_finalize_commands() {
         log_warning "make proto failed; install protoc plugins and run 'make proto' manually"
       fi
     else
-      log_warning "protoc not found; run 'make proto' manually before building"
-      mkdir -p gen/proto/user/v1
+      log_warning "protoc not found; run 'make proto' manually to regenerate protobuf files"
     fi
   fi
 
