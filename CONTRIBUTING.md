@@ -73,7 +73,7 @@ If you plan a **large change**, open an issue or discussion first so maintainers
    ./setup.sh
    ```
 
-   The script can rewrite the module path, trim optional modules, and help produce a valid `.env`. It is the primary entry point documented in the README.
+   The script rewrites the module path, trims optional modules, and collects per-service credentials (PostgreSQL, Redis, NATS) to produce a valid `.env`. It writes both individual vars (consumed by docker-compose via `${VAR:-default}` substitution) and assembled URLs (consumed by the Go app). The script **never modifies** `docker-compose.yml` -- `.env` is the single source of truth.
 
    **Proto / gRPC note:** the installer updates `.proto` source files with the new module path but intentionally leaves the generated Go files in `gen/` untouched (their embedded protobuf descriptors use a binary wire format that `sed` would corrupt). If `protoc` is on your `PATH`, the installer runs `make proto` to regenerate `gen/` automatically. If `protoc` is **not** installed, the existing `gen/` files still compile and work -- install the toolchain later and run `make proto` when convenient.
 

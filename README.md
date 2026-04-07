@@ -15,11 +15,14 @@ cd my-project
 1. Checks prerequisites (`go`, `git`, optional `docker`, `make`)
 2. Asks your new module path (`github.com/you/project`)
 3. Lets you keep/remove optional modules
-4. Builds your `.env` from prompts
-5. If you keep the **gRPC** module and `protoc` is installed, runs `make proto` to regenerate `gen/` after the module path change (otherwise install `protoc` and run `make proto` before building)
-6. Runs `go mod tidy` and `gofmt`
-7. Removes template git history and remote origin, initializes fresh repository
-8. Optionally configures a new git remote origin
+4. Collects credentials per service: PostgreSQL (user, password, database, host, port), Redis (host, port, password), NATS (host, port, user, password)
+5. Builds `.env` with both individual vars (consumed by docker-compose) and assembled URLs (consumed by the Go app)
+6. If you keep the **gRPC** module and `protoc` is installed, runs `make proto` to regenerate `gen/` after the module path change (otherwise install `protoc` and run `make proto` before building)
+7. Runs `go mod tidy` and `gofmt`
+8. Removes template git history and remote origin, initializes fresh repository
+9. Optionally configures a new git remote origin
+
+`setup.sh` never modifies `docker-compose.yml`. Instead, both compose files use `${VAR:-default}` substitution, reading credentials from the same `.env` that the Go app uses. This makes `.env` the single source of truth.
 
 ## Requirements
 
@@ -36,7 +39,8 @@ cd my-project
 
 - Rewrites module import path from `github.com/eminbekov/fiber-v3-template` to your chosen path
 - Removes optional modules you disable (files + marker blocks)
-- Regenerates `.env` interactively from `.env.example`
+- Collects per-service credentials (PostgreSQL, Redis, NATS) and writes both individual vars and assembled URLs to `.env`
+- Does **not** modify `docker-compose.yml` or `docker-compose.dev.yml` (they use env var substitution from `.env`)
 - Cleans dependencies/formatting
 - Removes template `.git` directory and reinitializes a fresh repository (default) or removes the template remote origin if you choose to keep history
 - Prompts for a new git remote origin URL so your project points to the correct repository
@@ -440,12 +444,13 @@ Monitoring configuration is stored under `deploy/monitoring/`. The provisioned G
 
 ### Infrastructure authentication
 
-Redis and NATS require passwords in all environments (compose, dev-compose, CI). Credentials are embedded in the connection URLs:
+Redis and NATS require passwords in all environments (compose, dev-compose, CI). `.env` contains both individual credential vars (used by docker-compose to create containers) and assembled connection URLs (used by the Go app):
 
-- Redis: `redis://:redis_password@host:6379/0` (set via `--requirepass` in Docker)
-- NATS: `nats://nats_user:nats_password@host:4222` (set via `--user`/`--pass` flags)
+- **PostgreSQL:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` + assembled `DATABASE_URL`
+- **Redis:** `REDIS_PASSWORD`, `REDIS_PORT` + assembled `REDIS_URL`
+- **NATS:** `NATS_USER`, `NATS_PASSWORD`, `NATS_PORT` + assembled `NATS_URL`
 
-Change these defaults for production deployments.
+Docker-compose files read individual vars via `${VAR:-default}` substitution, so changing `.env` automatically updates both the containers and the Go app. Change the defaults for production deployments.
 
 ## Endpoints
 
