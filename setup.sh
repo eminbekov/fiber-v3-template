@@ -279,55 +279,84 @@ apply_module_selection() {
   fi
 }
 
-DATABASE_NAME=""
-DATABASE_USER=""
-DATABASE_PASSWORD=""
-DATABASE_HOST=""
-DATABASE_PORT=""
+POSTGRES_DB=""
+POSTGRES_USER=""
+POSTGRES_PASSWORD=""
+POSTGRES_HOST=""
+POSTGRES_PORT=""
 REDIS_HOST=""
 REDIS_PORT=""
+REDIS_PASSWORD=""
+NATS_HOST=""
+NATS_PORT=""
+NATS_USER=""
+NATS_PASSWORD=""
 
 collect_database_config() {
   local default_database_name
   default_database_name="$(printf '%s' "${new_module_path##*/}" | tr '-' '_')"
 
   print_section "Database Configuration"
-  read -r -p "$(printf "%-30s [%s]: " "Database name" "${default_database_name}")" DATABASE_NAME
-  DATABASE_NAME="${DATABASE_NAME:-${default_database_name}}"
+  read -r -p "$(printf "%-30s [%s]: " "Database name" "${default_database_name}")" POSTGRES_DB < /dev/tty
+  POSTGRES_DB="${POSTGRES_DB:-${default_database_name}}"
 
-  read -r -p "$(printf "%-30s [%s]: " "Database user" "postgres")" DATABASE_USER
-  DATABASE_USER="${DATABASE_USER:-postgres}"
+  read -r -p "$(printf "%-30s [%s]: " "Database user" "postgres")" POSTGRES_USER < /dev/tty
+  POSTGRES_USER="${POSTGRES_USER:-postgres}"
 
-  read -r -p "$(printf "%-30s [%s]: " "Database password" "postgres")" DATABASE_PASSWORD
-  DATABASE_PASSWORD="${DATABASE_PASSWORD:-postgres}"
+  read -r -p "$(printf "%-30s [%s]: " "Database password" "postgres")" POSTGRES_PASSWORD < /dev/tty
+  POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 
-  read -r -p "$(printf "%-30s [%s]: " "Database host" "localhost")" DATABASE_HOST
-  DATABASE_HOST="${DATABASE_HOST:-localhost}"
+  read -r -p "$(printf "%-30s [%s]: " "Database host" "localhost")" POSTGRES_HOST < /dev/tty
+  POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 
-  read -r -p "$(printf "%-30s [%s]: " "Database port" "5432")" DATABASE_PORT
-  DATABASE_PORT="${DATABASE_PORT:-5432}"
+  read -r -p "$(printf "%-30s [%s]: " "Database port" "5432")" POSTGRES_PORT < /dev/tty
+  POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 
-  log_info "Database: ${DATABASE_USER}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}"
+  log_info "Database: ${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 }
 
 collect_redis_config() {
   print_section "Redis Configuration"
-  read -r -p "$(printf "%-30s [%s]: " "Redis host" "localhost")" REDIS_HOST
+  read -r -p "$(printf "%-30s [%s]: " "Redis host" "localhost")" REDIS_HOST < /dev/tty
   REDIS_HOST="${REDIS_HOST:-localhost}"
 
-  read -r -p "$(printf "%-30s [%s]: " "Redis port" "6379")" REDIS_PORT
+  read -r -p "$(printf "%-30s [%s]: " "Redis port" "6379")" REDIS_PORT < /dev/tty
   REDIS_PORT="${REDIS_PORT:-6379}"
+
+  read -r -p "$(printf "%-30s [%s]: " "Redis password" "redis_password")" REDIS_PASSWORD < /dev/tty
+  REDIS_PASSWORD="${REDIS_PASSWORD:-redis_password}"
 
   log_info "Redis: ${REDIS_HOST}:${REDIS_PORT}"
 }
 
+collect_nats_config() {
+  print_section "NATS Configuration"
+  read -r -p "$(printf "%-30s [%s]: " "NATS host" "localhost")" NATS_HOST < /dev/tty
+  NATS_HOST="${NATS_HOST:-localhost}"
+
+  read -r -p "$(printf "%-30s [%s]: " "NATS port" "4222")" NATS_PORT < /dev/tty
+  NATS_PORT="${NATS_PORT:-4222}"
+
+  read -r -p "$(printf "%-30s [%s]: " "NATS user" "nats_user")" NATS_USER < /dev/tty
+  NATS_USER="${NATS_USER:-nats_user}"
+
+  read -r -p "$(printf "%-30s [%s]: " "NATS password" "nats_password")" NATS_PASSWORD < /dev/tty
+  NATS_PASSWORD="${NATS_PASSWORD:-nats_password}"
+
+  log_info "NATS: ${NATS_USER}@${NATS_HOST}:${NATS_PORT}"
+}
+
 assembled_database_url() {
   printf 'postgres://%s:%s@%s:%s/%s?sslmode=disable' \
-    "${DATABASE_USER}" "${DATABASE_PASSWORD}" "${DATABASE_HOST}" "${DATABASE_PORT}" "${DATABASE_NAME}"
+    "${POSTGRES_USER}" "${POSTGRES_PASSWORD}" "${POSTGRES_HOST}" "${POSTGRES_PORT}" "${POSTGRES_DB}"
 }
 
 assembled_redis_url() {
-  printf 'redis://%s:%s/0' "${REDIS_HOST}" "${REDIS_PORT}"
+  printf 'redis://:%s@%s:%s/0' "${REDIS_PASSWORD}" "${REDIS_HOST}" "${REDIS_PORT}"
+}
+
+assembled_nats_url() {
+  printf 'nats://%s:%s@%s:%s' "${NATS_USER}" "${NATS_PASSWORD}" "${NATS_HOST}" "${NATS_PORT}"
 }
 
 propagate_database_config_to_docker_compose() {
@@ -335,10 +364,10 @@ propagate_database_config_to_docker_compose() {
   if [[ ! -f "${compose_file}" ]]; then
     return
   fi
-  replace_in_file "${compose_file}" "fiber_template" "${DATABASE_NAME}"
-  replace_in_file "${compose_file}" "POSTGRES_USER: postgres" "POSTGRES_USER: ${DATABASE_USER}"
-  replace_in_file "${compose_file}" "POSTGRES_PASSWORD: postgres" "POSTGRES_PASSWORD: ${DATABASE_PASSWORD}"
-  replace_in_file "${compose_file}" "pg_isready -U postgres" "pg_isready -U ${DATABASE_USER}"
+  replace_in_file "${compose_file}" "fiber_template" "${POSTGRES_DB}"
+  replace_in_file "${compose_file}" "POSTGRES_USER: postgres" "POSTGRES_USER: ${POSTGRES_USER}"
+  replace_in_file "${compose_file}" "POSTGRES_PASSWORD: postgres" "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}"
+  replace_in_file "${compose_file}" "pg_isready -U postgres" "pg_isready -U ${POSTGRES_USER}"
 }
 
 build_env_file() {
@@ -371,6 +400,18 @@ build_env_file() {
         assembled_value="$(assembled_redis_url)"
         printf "%s=%s\n" "${variable_name}" "${assembled_value}" >> "${ENV_FILE}"
         log_info "REDIS_URL assembled from redis configuration"
+        continue
+        ;;
+      NATS_URL)
+        assembled_value="$(assembled_nats_url)"
+        printf "%s=%s\n" "${variable_name}" "${assembled_value}" >> "${ENV_FILE}"
+        log_info "NATS_URL assembled from NATS configuration"
+        continue
+        ;;
+      POSTGRES_USER|POSTGRES_PASSWORD|POSTGRES_DB|POSTGRES_HOST|POSTGRES_PORT|\
+      REDIS_HOST|REDIS_PORT|REDIS_PASSWORD|\
+      NATS_HOST|NATS_PORT|NATS_USER|NATS_PASSWORD)
+        printf "%s=%s\n" "${variable_name}" "${!variable_name}" >> "${ENV_FILE}"
         continue
         ;;
     esac
@@ -528,6 +569,7 @@ main() {
   apply_module_selection
   collect_database_config
   collect_redis_config
+  collect_nats_config
   build_env_file
   if ! run_finalize_commands; then
     log_warning "Some finalize steps failed, but setup will continue."
