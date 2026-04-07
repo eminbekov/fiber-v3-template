@@ -147,7 +147,7 @@ replace_module_path() {
 
   while IFS= read -r go_file_path; do
     replace_in_file "${go_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
-  done < <(find . -type f -name "*.go" -not -path "./.git/*" -print)
+  done < <(find . -type f -name "*.go" -not -path "./.git/*" -not -path "./gen/*" -print)
 
   while IFS= read -r proto_file_path; do
     replace_in_file "${proto_file_path}" "${TEMPLATE_MODULE_PATH}" "${new_module_path}"
