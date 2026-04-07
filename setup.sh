@@ -359,17 +359,6 @@ assembled_nats_url() {
   printf 'nats://%s:%s@%s:%s' "${NATS_USER}" "${NATS_PASSWORD}" "${NATS_HOST}" "${NATS_PORT}"
 }
 
-propagate_database_config_to_docker_compose() {
-  local compose_file="$1"
-  if [[ ! -f "${compose_file}" ]]; then
-    return
-  fi
-  replace_in_file "${compose_file}" "fiber_template" "${POSTGRES_DB}"
-  replace_in_file "${compose_file}" "POSTGRES_USER: postgres" "POSTGRES_USER: ${POSTGRES_USER}"
-  replace_in_file "${compose_file}" "POSTGRES_PASSWORD: postgres" "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}"
-  replace_in_file "${compose_file}" "pg_isready -U postgres" "pg_isready -U ${POSTGRES_USER}"
-}
-
 build_env_file() {
   local line_value
   local variable_name
@@ -420,9 +409,6 @@ build_env_file() {
     user_value="${user_value:-${default_value}}"
     printf "%s=%s\n" "${variable_name}" "${user_value}" >> "${ENV_FILE}"
   done < "${ENV_EXAMPLE_FILE}"
-
-  propagate_database_config_to_docker_compose "deploy/docker/docker-compose.yml"
-  propagate_database_config_to_docker_compose "deploy/docker/docker-compose.dev.yml"
 
   log_info "Created ${ENV_FILE}"
 }
