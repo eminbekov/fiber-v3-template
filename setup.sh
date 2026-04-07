@@ -420,43 +420,72 @@ maybe_remove_setup_script() {
 
 run_finalize_commands() {
   print_section "Finalize"
+  local finalize_errors=0
+  local goimports_binary=""
+
+  set +e
 
   if command -v goimports >/dev/null 2>&1; then
-    goimports -w .
-    log_info "Ran goimports (removed unused imports)"
+    goimports_binary="goimports"
   else
     log_warning "goimports not found; installing golang.org/x/tools/cmd/goimports@latest"
-    go install golang.org/x/tools/cmd/goimports@latest
+    go install golang.org/x/tools/cmd/goimports@latest 2>/dev/null
     if command -v goimports >/dev/null 2>&1; then
-      goimports -w .
-      log_info "Ran goimports (removed unused imports)"
+      goimports_binary="goimports"
     else
       local gobin_path
       gobin_path="$(go env GOPATH)/bin/goimports"
       if [[ -x "${gobin_path}" ]]; then
-        "${gobin_path}" -w .
-        log_info "Ran goimports from GOPATH (removed unused imports)"
-      else
-        log_warning "goimports unavailable after install attempt; unused imports may remain"
+        goimports_binary="${gobin_path}"
       fi
     fi
   fi
 
+  if [[ -n "${goimports_binary}" ]]; then
+    if "${goimports_binary}" -w . 2>/dev/null; then
+      log_info "Ran goimports (removed unused imports)"
+    else
+      log_error "goimports failed; unused imports may remain"
+      finalize_errors=$((finalize_errors + 1))
+    fi
+  else
+    log_warning "goimports unavailable after install attempt; unused imports may remain"
+    finalize_errors=$((finalize_errors + 1))
+  fi
+
   if [[ -d proto ]]; then
     if command -v protoc >/dev/null 2>&1; then
-      if make proto; then
+      if make proto 2>/dev/null; then
         log_info "Regenerated protobuf files"
       else
         log_warning "make proto failed; install protoc plugins and run 'make proto' manually"
+        finalize_errors=$((finalize_errors + 1))
       fi
     else
       log_warning "protoc not found; run 'make proto' manually to regenerate protobuf files"
     fi
   fi
 
-  go mod tidy
-  gofmt -s -w .
-  log_info "Ran go mod tidy and gofmt"
+  if go mod tidy 2>&1; then
+    log_info "Ran go mod tidy"
+  else
+    log_error "go mod tidy failed; run it manually to resolve dependency issues"
+    finalize_errors=$((finalize_errors + 1))
+  fi
+
+  if gofmt -s -w . 2>&1; then
+    log_info "Ran gofmt"
+  else
+    log_error "gofmt failed; run 'gofmt -s -w .' manually to format source files"
+    finalize_errors=$((finalize_errors + 1))
+  fi
+
+  set -e
+
+  if [[ "${finalize_errors}" -gt 0 ]]; then
+    log_warning "${finalize_errors} finalize step(s) had issues. Run 'make verify' after setup to check."
+    return 1
+  fi
 }
 
 print_next_steps() {
@@ -500,8 +529,9 @@ main() {
   collect_database_config
   collect_redis_config
   build_env_file
-  if ! ( run_finalize_commands ); then
-    log_warning "Finalize commands had errors (run 'make verify' after setup to check)"
+  if ! run_finalize_commands; then
+    log_warning "Some finalize steps failed, but setup will continue."
+    log_warning "Please run 'make verify' after setup to identify and fix remaining issues."
   fi
   maybe_remove_template_files
   maybe_remove_setup_script
